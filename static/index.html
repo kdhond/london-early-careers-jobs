@@ -173,6 +173,7 @@
   .company-cell { display: flex; align-items: center; gap: 8px; }
   .company-logo { width: 24px; height: 24px; border-radius: 4px; object-fit: contain; background: var(--bg); flex-shrink: 0; }
   .company-logo-placeholder { width: 24px; height: 24px; border-radius: 4px; background: var(--border); flex-shrink: 0; }
+  .find-website-link { font-size: 11px; color: var(--text-muted); }
 
   .badge-new {
     background: var(--badge-new-bg);
@@ -650,9 +651,14 @@ function renderJobRow(job) {
   const logoCell = job.company_logo
     ? `<img class="company-logo" src="${escapeHtml(job.company_logo)}" alt="">`
     : `<div class="company-logo-placeholder"></div>`;
-  const websiteHref = job.company_website
-    || `https://www.google.com/search?q=${encodeURIComponent(job.company + " official website")}`;
-  const isGuessedWebsite = !job.company_website;
+  // §5.1: the company name links to their real website when we know it.
+  // When we don't, the name stays plain text and a clearly separate
+  // "Find website" link (to a Google search) sits next to it — the name
+  // itself never silently points to a guessed URL.
+  const findWebsiteHref = `https://www.google.com/search?q=${encodeURIComponent(job.company + " official website")}`;
+  const companyNameHtml = job.company_website
+    ? `<a href="${escapeHtml(job.company_website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(job.company)}</a>`
+    : `${escapeHtml(job.company)} <a class="find-website-link" href="${escapeHtml(findWebsiteHref)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">(Find website)</a>`;
 
   const sourceIcons = (job.sources || [])
     .map((s) => `<span class="source-icon">${escapeHtml(s)}</span>`)
@@ -665,9 +671,7 @@ function renderJobRow(job) {
     <td>
       <div class="company-cell">
         ${logoCell}
-        <a href="${escapeHtml(websiteHref)}" target="_blank" rel="noopener" title="${isGuessedWebsite ? "Find website (guess)" : ""}" onclick="event.stopPropagation()">
-          ${escapeHtml(job.company)}${isGuessedWebsite ? " 🔍" : ""}
-        </a>
+        <span>${companyNameHtml}</span>
       </div>
     </td>
     <td>
