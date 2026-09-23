@@ -1,4 +1,23 @@
-"""SQLite schema, upserts, queries and refresh-run logging."""
+"""
+SQLite storage layer.
+
+This is the only file that talks to the database directly — everything else
+(sources, the pipeline, the Flask routes) goes through the functions here.
+Keeping all the SQL in one place makes it much easier to change the schema
+later without hunting through the rest of the codebase.
+
+A few design choices worth knowing:
+- We store list/dict fields (requirements, apply_links, sources) as JSON
+  text in a column, because SQLite doesn't have a native list type and this
+  app doesn't need to query *inside* those lists with SQL.
+- `upsert_job` uses SQLite's "INSERT ... ON CONFLICT DO UPDATE" so that if a
+  job with the same id already exists, we update it in place instead of
+  creating a duplicate row.
+- `missed_refreshes` tracks how many refreshes in a row a job has NOT been
+  seen in. Once a job is missing for `inactive_after_missed` refreshes in a
+  row, we mark it inactive (see §6, "mark jobs that have disappeared as
+  inactive" in the spec) rather than deleting it, so history is kept.
+"""
 from __future__ import annotations
 
 import json
@@ -10,6 +29,9 @@ from typing import Iterable, Optional
 
 from jobboard.models import ApplyLink, Job
 
+# The SQL that creates every table, run once whenever we open the database.
+# "CREATE TABLE IF NOT EXISTS" makes this safe to run every time the app
+# starts, even if the tables already exist from a previous run.
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS jobs (
     id TEXT PRIMARY KEY,
@@ -42,16 +64,24 @@ CREATE TABLE IF NOT EXISTS jobs (
     missed_refreshes INTEGER DEFAULT 0
 );
 
+-- Indexes speed up the queries the app actually runs: "give me active jobs",
+-- and dedupe's "find other jobs at the same company".
 CREATE INDEX IF NOT EXISTS idx_jobs_active ON jobs(is_active);
 CREATE INDEX IF NOT EXISTS idx_jobs_company_norm ON jobs(company_normalised);
 CREATE INDEX IF NOT EXISTS idx_jobs_posted_at ON jobs(posted_at);
 
+-- Caches a company's website/logo once we learn it from any source, so a
+-- later job at the same company (from a source with no website info) can
+-- still show a website link. See spec §5.1.
 CREATE TABLE IF NOT EXISTS companies (
     company_normalised TEXT PRIMARY KEY,
     website TEXT,
     logo TEXT
 );
 
+-- One row per refresh (each time the Refresh button is pressed, or the
+-- scheduled `python -m jobboard.refresh` runs). Lets the frontend poll
+-- "how is the current refresh going" via GET /api/refresh/status.
 CREATE TABLE IF NOT EXISTS refresh_runs (
     run_id TEXT PRIMARY KEY,
     started_at TEXT NOT NULL,
@@ -60,6 +90,8 @@ CREATE TABLE IF NOT EXISTS refresh_runs (
     sources_json TEXT DEFAULT '{}'
 );
 
+-- One row per Apify (LinkedIn) run, used to enforce the monthly budget cap
+-- in jobboard/budget.py — we sum estimated_cost_usd for the current month.
 CREATE TABLE IF NOT EXISTS apify_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ran_at TEXT NOT NULL,
@@ -70,11 +102,14 @@ CREATE TABLE IF NOT EXISTS apify_runs (
 
 
 def get_db(path: str | Path) -> sqlite3.Connection:
+    """Open (or create) the SQLite database file and make sure the schema exists."""
     path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True)  # make sure data/ exists
+    # check_same_thread=False because Flask's refresh runs in a background
+    # thread (see app.py) while the main thread keeps serving requests.
     conn = sqlite3.connect(str(path), check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
+    conn.row_factory = sqlite3.Row  # lets us access columns by name, e.g. row["title"]
+    conn.execute("PRAGMA journal_mode=WAL")  # allows concurrent reads while a write is happening
     conn.executescript(SCHEMA)
     conn.commit()
     return conn
@@ -82,6 +117,7 @@ def get_db(path: str | Path) -> sqlite3.Connection:
 
 @contextmanager
 def transaction(conn: sqlite3.Connection):
+    """Commit on success, roll back if anything inside the `with` block raises."""
     try:
         yield conn
         conn.commit()
@@ -91,15 +127,19 @@ def transaction(conn: sqlite3.Connection):
 
 
 def _now() -> str:
+    """Current UTC time as an ISO 8601 string, used for timestamp columns."""
     return datetime.now(timezone.utc).isoformat()
 
 
 def _row_to_job(row: sqlite3.Row) -> Job:
+    """Convert one database row back into a Job object (the reverse of upsert_job)."""
     d = dict(row)
+    # The JSON text columns need to be parsed back into Python lists/objects.
     apply_links = [ApplyLink(**l) for l in json.loads(d.pop("apply_links") or "[]")]
     requirements = json.loads(d.pop("requirements") or "[]")
     sources = json.loads(d.pop("sources") or "[]")
-    d.pop("missed_refreshes", None)
+    d.pop("missed_refreshes", None)  # internal bookkeeping field, not part of the Job schema
+    # SQLite stores booleans as 0/1 integers, so convert them back to True/False.
     d["description_is_full"] = bool(d["description_is_full"])
     d["posted_at_estimated"] = bool(d["posted_at_estimated"])
     d["is_active"] = bool(d["is_active"])
@@ -107,7 +147,17 @@ def _row_to_job(row: sqlite3.Row) -> Job:
 
 
 def upsert_job(conn: sqlite3.Connection, job: Job) -> None:
+    """
+    Insert a new job, or update it in place if a job with the same id
+    already exists (that's what "upsert" means: UPDATE or INSERT).
+
+    Because `job.id` is a hash of company + title + location (see models.py),
+    the same real-world job seen again in a later refresh will produce the
+    same id and land on the same row here, instead of creating a duplicate.
+    """
     now = _now()
+    # Keep the original first_seen_at if this job already existed, so we
+    # don't lose track of when we first spotted it.
     existing = conn.execute(
         "SELECT first_seen_at FROM jobs WHERE id = ?", (job.id,)
     ).fetchone()
@@ -132,6 +182,10 @@ def upsert_job(conn: sqlite3.Connection, job: Job) -> None:
             :description_html, :description_text, :description_is_full,
             :requirements, :apply_links, :sources, 1, 0
         )
+        -- If a row with this id already exists, update it instead of failing
+        -- with a "duplicate primary key" error. We also reset is_active to 1
+        -- and missed_refreshes to 0, since seeing the job again means it's
+        -- still live.
         ON CONFLICT(id) DO UPDATE SET
             title=excluded.title, company=excluded.company,
             company_normalised=excluded.company_normalised,
@@ -182,13 +236,23 @@ def upsert_job(conn: sqlite3.Connection, job: Job) -> None:
 def mark_missing_inactive(
     conn: sqlite3.Connection, seen_ids: Iterable[str], inactive_after_missed: int
 ) -> int:
-    """Bump missed_refreshes for jobs not seen this run; deactivate past the threshold."""
+    """
+    Called once per refresh, after all sources have been upserted.
+
+    Any active job whose id was NOT in this refresh's results gets its
+    `missed_refreshes` counter bumped. Once that counter reaches
+    `inactive_after_missed`, the job is marked inactive (so it stops
+    appearing on the board) — this handles jobs that have been taken down
+    without us needing to delete the row.
+
+    Returns how many jobs were newly deactivated, for the refresh summary.
+    """
     seen_ids = set(seen_ids)
     rows = conn.execute("SELECT id, missed_refreshes FROM jobs WHERE is_active = 1").fetchall()
     deactivated = 0
     for row in rows:
         if row["id"] in seen_ids:
-            continue
+            continue  # still present this refresh, nothing to do
         missed = row["missed_refreshes"] + 1
         if missed >= inactive_after_missed:
             conn.execute(
@@ -204,6 +268,7 @@ def mark_missing_inactive(
 
 
 def get_active_jobs(conn: sqlite3.Connection) -> list[Job]:
+    """All jobs currently shown on the board (used by GET /api/jobs)."""
     rows = conn.execute("SELECT * FROM jobs WHERE is_active = 1").fetchall()
     return [_row_to_job(r) for r in rows]
 
@@ -214,6 +279,7 @@ def get_job(conn: sqlite3.Connection, job_id: str) -> Optional[Job]:
 
 
 def get_company_website(conn: sqlite3.Connection, company_normalised: str) -> Optional[dict]:
+    """Look up a cached website/logo for a company we've seen before (spec §5.1, priority 3)."""
     row = conn.execute(
         "SELECT website, logo FROM companies WHERE company_normalised = ?",
         (company_normalised,),
@@ -227,6 +293,12 @@ def cache_company(
     website: Optional[str] = None,
     logo: Optional[str] = None,
 ) -> None:
+    """
+    Remember a company's website/logo so future jobs at the same company
+    (even from a source that doesn't provide this info) can reuse it.
+    COALESCE means "keep the existing value if the new one is empty" —
+    so a later call with only a logo won't wipe out an already-known website.
+    """
     if not company_normalised or not (website or logo):
         return
     conn.execute(
@@ -241,6 +313,7 @@ def cache_company(
 
 
 def start_refresh_run(conn: sqlite3.Connection, run_id: str) -> None:
+    """Record that a refresh has started, so /api/refresh/status has something to report."""
     conn.execute(
         "INSERT INTO refresh_runs (run_id, started_at, status) VALUES (?, ?, 'running')",
         (run_id, _now()),
@@ -251,6 +324,12 @@ def start_refresh_run(conn: sqlite3.Connection, run_id: str) -> None:
 def update_refresh_run(
     conn: sqlite3.Connection, run_id: str, sources_status: dict, status: Optional[str] = None
 ) -> None:
+    """
+    Update the progress of an in-flight refresh. `sources_status` is a dict
+    like {"reed": {"status": "done", "count": 42}, ...} that the frontend's
+    progress panel polls and displays. Pass `status="done"` (or "error")
+    when the whole refresh finishes.
+    """
     fields = {"sources_json": json.dumps(sources_status)}
     if status:
         fields["status"] = status
@@ -273,6 +352,7 @@ def get_refresh_run(conn: sqlite3.Connection, run_id: str) -> Optional[dict]:
 
 
 def log_apify_run(conn: sqlite3.Connection, results: int, estimated_cost_usd: float) -> None:
+    """Record one Apify run's cost, used to track spending against the monthly budget cap."""
     conn.execute(
         "INSERT INTO apify_runs (ran_at, results, estimated_cost_usd) VALUES (?, ?, ?)",
         (_now(), results, estimated_cost_usd),
@@ -281,6 +361,13 @@ def log_apify_run(conn: sqlite3.Connection, results: int, estimated_cost_usd: fl
 
 
 def get_apify_spend_this_month(conn: sqlite3.Connection) -> float:
+    """
+    Sum of estimated Apify costs for the current calendar month.
+
+    We match on the ISO timestamp's "YYYY-MM" prefix with a SQL LIKE, which
+    is a simple way to filter by month without needing SQLite's date
+    functions.
+    """
     month_prefix = datetime.now(timezone.utc).strftime("%Y-%m")
     row = conn.execute(
         "SELECT COALESCE(SUM(estimated_cost_usd), 0) AS total FROM apify_runs WHERE ran_at LIKE ?",
@@ -290,5 +377,6 @@ def get_apify_spend_this_month(conn: sqlite3.Connection) -> float:
 
 
 def get_last_apify_run(conn: sqlite3.Connection) -> Optional[str]:
+    """When Apify/LinkedIn last ran, used to enforce the cooldown period."""
     row = conn.execute("SELECT ran_at FROM apify_runs ORDER BY ran_at DESC LIMIT 1").fetchone()
     return row["ran_at"] if row else None
