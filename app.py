@@ -24,12 +24,19 @@ from pathlib import Path
 from typing import Optional
 
 import bleach
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory
 
 from jobboard import budget, db
 from jobboard.categorise import Categoriser
 from jobboard.refresh import run_refresh
 from jobboard.sources.base import PROJECT_ROOT, load_yaml
+
+# Must happen before any source reads os.getenv() for its API key —
+# load_dotenv() reads .env into the process environment; without this
+# call, python-dotenv being installed does nothing on its own and every
+# source would see its key as missing even with .env filled in.
+load_dotenv(PROJECT_ROOT / ".env")
 
 HOST = "127.0.0.1"  # localhost only — never expose this to the network
 PORT = 8000

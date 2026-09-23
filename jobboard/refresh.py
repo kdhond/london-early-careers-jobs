@@ -269,6 +269,12 @@ def print_summary(summary: RefreshSummary) -> None:
 
 
 def main() -> int:
+    # Only needed here for the CLI path — app.py (the web server path)
+    # loads .env itself before importing anything that reads os.getenv().
+    from dotenv import load_dotenv
+
+    load_dotenv(PROJECT_ROOT / ".env")
+
     parser = argparse.ArgumentParser(description="Run a full jobboard refresh from the command line.")
     parser.add_argument(
         "--force-linkedin",
