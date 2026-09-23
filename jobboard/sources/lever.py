@@ -10,12 +10,21 @@ Docs: https://github.com/lever/postings-api
 """
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 import httpx
 
 from jobboard.models import ApplyLink, Job
 from jobboard.sources.base import USER_AGENT, Source, load_yaml, request_with_retry
+
+_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _html_to_text(raw_html: str) -> str:
+    if not raw_html:
+        return ""
+    return _TAG_RE.sub(" ", raw_html).strip()
 
 
 class LeverSource(Source):
@@ -71,7 +80,12 @@ class LeverSource(Source):
             if heading or content:
                 description_html += f"<h3>{heading}</h3>{content}"
 
-        description_text = raw.get("descriptionPlain", "") or ""
+        # Derived from the SAME description_html built above (base
+        # description + appended "lists" sections), not Lever's own
+        # descriptionPlain field — that field only covers the base
+        # description and silently drops the appended sections, which is
+        # often where the actual requirements/responsibilities live.
+        description_text = _html_to_text(description_html)
 
         # Lever gives createdAt as milliseconds since the Unix epoch.
         posted_at = None
