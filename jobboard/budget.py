@@ -32,9 +32,22 @@ class BudgetDecision:
     estimated_run_cost_usd: float
 
 
-def estimate_run_cost(max_results: int, price_per_1000_usd: float) -> float:
-    """What this run would cost if it returned the maximum number of results."""
-    return round(max_results * price_per_1000_usd / 1000, 4)
+def estimate_run_cost(
+    max_results: int,
+    price_per_1000_usd: float,
+    num_searches: int = 1,
+    actor_start_fee_usd: float = 0.0,
+) -> float:
+    """
+    What a run would cost in the worst case: the per-result price for the
+    maximum number of results, plus a flat start fee for every separate
+    actor invocation (we run the LinkedIn actor once per search keyword,
+    since it only accepts one keyword/location per call — see
+    linkedin_apify.py).
+    """
+    return round(
+        max_results * price_per_1000_usd / 1000 + num_searches * actor_start_fee_usd, 4
+    )
 
 
 def minutes_since_last_run(conn: sqlite3.Connection) -> Optional[float]:
@@ -62,9 +75,13 @@ def check_apify_budget(
     price_per_1000 = apify_settings["price_per_1000_usd"]
     max_results = apify_settings["max_results_per_run"]
     cooldown_minutes = apify_settings["cooldown_minutes"]
+    actor_start_fee = apify_settings.get("actor_start_fee_usd", 0.0)
+    # One actor run per search keyword (the actor takes a single
+    # keyword/location per call) — see linkedin_apify.py.
+    num_searches = len(settings["search_keywords"])
 
     spend_so_far = db.get_apify_spend_this_month(conn)
-    estimated_cost = estimate_run_cost(max_results, price_per_1000)
+    estimated_cost = estimate_run_cost(max_results, price_per_1000, num_searches, actor_start_fee)
 
     # The budget check always applies, force or not.
     if spend_so_far + estimated_cost > monthly_budget:
@@ -100,9 +117,15 @@ def check_apify_budget(
     )
 
 
-def record_run(conn: sqlite3.Connection, results: int, price_per_1000_usd: float) -> None:
-    """Log an Apify run's actual result count so future budget checks account for its cost."""
-    cost = round(results * price_per_1000_usd / 1000, 4)
+def record_run(
+    conn: sqlite3.Connection,
+    results: int,
+    price_per_1000_usd: float,
+    num_searches: int = 1,
+    actor_start_fee_usd: float = 0.0,
+) -> None:
+    """Log an Apify run's actual cost so future budget checks account for it."""
+    cost = estimate_run_cost(results, price_per_1000_usd, num_searches, actor_start_fee_usd)
     db.log_apify_run(conn, results, cost)
 
 

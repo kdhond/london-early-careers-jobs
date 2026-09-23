@@ -43,11 +43,27 @@ experience:
      "vice president", chief, partner]
 
 apify:
-  actor: "supreme_coder~linkedin-jobs-scraper"
+  # The spec originally named a different actor (supreme_coder/linkedin-
+  # jobs-scraper), but it no longer exists on Apify (confirmed: calling it
+  # returns "Actor with this name was not found"). This is its replacement,
+  # picked and price-checked live before committing — see linkedin_apify.py.
+  actor: "valig~linkedin-jobs-scraper"
   cooldown_minutes: 60
   monthly_budget_usd: 4.00
-  price_per_1000_usd: 0.10
-  max_results_per_run: 1000
+  # The spec assumed $0.10 per 1,000 results (that was this actor's price
+  # before it was pulled). This actor's real Apify-free-tier price, checked
+  # live, is $0.40 per 1,000 results.
+  price_per_1000_usd: 0.40
+  # This actor also charges a small flat fee every time it starts a run,
+  # even for zero results. We run it once per search keyword (see
+  # linkedin_apify.py), so a full refresh pays this fee once per keyword —
+  # budget.py accounts for that when deciding whether a run is affordable.
+  actor_start_fee_usd: 0.001
+  # Sized so that one refresh a day, every day, stays within the $4/month
+  # cap: (4.00 / 30 days) minus the daily start-fee overhead, divided by
+  # the per-result price, comes out to about 300 results/day. Raise this
+  # if you refresh less often than daily.
+  max_results_per_run: 290
   posted_within_first_run: r604800   # past 7 days (LinkedIn's f_TPR param)
   posted_within_routine: r86400      # past 24 hours, for routine refreshes
 
