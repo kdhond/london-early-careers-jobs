@@ -165,6 +165,13 @@ def upsert_job(conn: sqlite3.Connection, job: Job) -> None:
     job.first_seen_at = first_seen_at
     job.last_seen_at = now
 
+    # Spec §5: if no source gave us a posted date, fall back to when we
+    # first saw this job and flag it as an estimate rather than leaving
+    # posted_at blank.
+    if job.posted_at is None:
+        job.posted_at = first_seen_at[:10]
+        job.posted_at_estimated = True
+
     conn.execute(
         """
         INSERT INTO jobs (

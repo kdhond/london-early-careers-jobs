@@ -677,7 +677,7 @@ function renderJobRow(job) {
     <td><span class="category-tag">${escapeHtml(job.category)}</span></td>
     <td>${escapeHtml(job.city || job.location || "—")}${job.work_mode !== "unknown" ? " · " + escapeHtml(job.work_mode) : ""}</td>
     <td>${escapeHtml(formatSalary(job))}</td>
-    <td title="${job.posted_at ? escapeHtml(job.posted_at) : ""}">${job.posted_at ? relativeTime(job.posted_at) : "unknown"}</td>
+    <td title="${job.posted_at ? escapeHtml(job.posted_at) + (job.posted_at_estimated ? " (estimated — no posted date given, using first-seen date)" : "") : ""}">${job.posted_at ? relativeTime(job.posted_at) : "unknown"}${job.posted_at_estimated ? "*" : ""}</td>
     <td><div class="source-icons">${sourceIcons}</div></td>
     <td>
       ${applyCell}
