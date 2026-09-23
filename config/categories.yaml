@@ -1,0 +1,201 @@
+# Ordered category rules (§7). Each job is checked against these, in this
+# exact order, and the FIRST category whose keywords match the job's title
+# wins — so more specific categories must come before more general ones.
+#
+# Note: "AI / Machine Learning" is listed here right after "Software
+# Engineering", ahead of "Data & Analytics" — even though the spec's
+# numbered list shows Data as #2 and AI as #3 — because the spec explicitly
+# says AI/ML must be checked first, "so 'Data Scientist' goes here [in
+# AI/ML]" rather than being caught by Data & Analytics' own "data analyst"-
+# style keywords. The order in this file IS the matching priority; it's
+# not just a display order.
+#
+# Each keyword is matched case-insensitively as a whole phrase (word
+# boundaries on each side), against the job title first, then — only if no
+# category matched on the title — against the full description. A job that
+# still matches nothing falls back to "Other".
+
+- name: Software Engineering
+  keywords:
+    - software engineer
+    - developer
+    - backend
+    - back-end
+    - frontend
+    - front-end
+    - full stack
+    - full-stack
+    - mobile engineer
+    - ios
+    - android
+    - devops
+    - sre
+    - site reliability
+    - platform engineer
+    - qa engineer
+    - test engineer
+    - quality assurance
+
+- name: AI / Machine Learning
+  keywords:
+    - machine learning
+    - deep learning
+    - ml engineer
+    - artificial intelligence
+    - "ai "
+    - data scientist
+    - research engineer
+    - nlp
+    - computer vision
+    - llm
+    - ai
+
+- name: Data & Analytics
+  keywords:
+    - data analyst
+    - business intelligence
+    - analytics
+    - insight analyst
+    - data engineer
+
+- name: Cyber Security
+  keywords:
+    - cyber security
+    - cybersecurity
+    - security engineer
+    - security analyst
+    - penetration tester
+    - pentester
+    - infosec
+    - soc analyst
+    - security researcher
+
+- name: Product Management
+  keywords:
+    - product manager
+    - product owner
+    - associate product manager
+
+- name: Design / UX
+  keywords:
+    - ux designer
+    - ui designer
+    - product designer
+    - ux researcher
+    - graphic designer
+    - visual designer
+    - user experience
+    - user interface
+
+- name: Finance & Accounting
+  keywords:
+    - financial analyst
+    - accountant
+    - accounting
+    - audit
+    - auditor
+    - tax analyst
+    - fp&a
+    - actuarial
+    - bookkeeper
+    - finance analyst
+
+- name: Banking & Investment
+  keywords:
+    - investment banking
+    - trading analyst
+    - trader
+    - markets analyst
+    - asset management
+    - equity research
+    - quant analyst
+    - quantitative analyst
+    - investment analyst
+    - mergers and acquisitions
+
+- name: Consulting & Strategy
+  keywords:
+    - consultant
+    - consulting
+    - strategy analyst
+    - management consulting
+
+- name: Marketing & Content
+  keywords:
+    - marketing
+    - content writer
+    - content marketing
+    - seo
+    - social media
+    - brand manager
+    - copywriter
+    - growth marketing
+
+- name: Sales & Business Development
+  keywords:
+    - sales
+    - business development
+    - bdr
+    - sdr
+    - account executive
+    - account manager
+
+- name: Operations & Supply Chain
+  keywords:
+    - operations
+    - supply chain
+    - logistics
+    - procurement
+    - ops analyst
+    - warehouse
+
+- name: HR & Recruitment
+  keywords:
+    - human resources
+    - hr
+    - recruiter
+    - recruitment
+    - talent acquisition
+    - people operations
+
+- name: Legal & Compliance
+  keywords:
+    - legal counsel
+    - paralegal
+    - compliance
+    - regulatory affairs
+    - contracts manager
+    - solicitor
+
+- name: Engineering (non-software)
+  keywords:
+    - mechanical engineer
+    - electrical engineer
+    - civil engineer
+    - chemical engineer
+    - hardware engineer
+    - structural engineer
+    - manufacturing engineer
+
+- name: Healthcare & Science
+  keywords:
+    - healthcare
+    - clinical
+    - nurse
+    - biomedical
+    - pharmacist
+    - pharmacy
+    - research scientist
+    - laboratory
+    - life sciences
+
+- name: Customer Success & Support
+  keywords:
+    - customer success
+    - customer support
+    - customer service
+    - technical support
+    - help desk
+
+- name: Other
+  keywords: []
