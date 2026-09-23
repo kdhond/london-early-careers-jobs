@@ -1,0 +1,68 @@
+# Central configuration for the whole app. Nothing here is a secret (those
+# go in .env) — this file is about search scope, thresholds and limits, and
+# is safe to commit and tweak over time.
+
+locations:
+  primary: "London, England, United Kingdom"
+  secondary: ["England, United Kingdom"]
+  # Cities/regions we treat as "in England" for the location filter (§6.2).
+  # A job whose location text doesn't mention one of these (or "London"/
+  # "England"/"UK"/"remote") is assumed to be outside England and dropped.
+  england_cities:
+    [London, Manchester, Birmingham, Leeds, Bristol, Cambridge, Oxford,
+     Reading, Brighton, Newcastle, Nottingham, Sheffield, Liverpool,
+     Milton Keynes, Southampton, Leicester, Coventry, York, Bath, Guildford]
+
+# Broad keywords used to search Reed, Adzuna and LinkedIn (via Apify), so
+# between them the searches cover every category in categories.yaml.
+search_keywords:
+  - graduate
+  - junior
+  - entry level
+  - associate
+  - analyst
+  - software engineer
+  - data
+  - marketing
+  - finance
+  - consultant
+  - product
+  - designer
+  - operations
+  - sales
+  - intern
+
+experience:
+  max_years: 4
+  # Whole-word, case-insensitive title matches that mean "not an
+  # early-career role" — see filters.py. "architect" is deliberately not
+  # in this default list, since "Solutions Architect" roles can be junior;
+  # add it here if you want it excluded.
+  excluded_title_words:
+    [senior, sr, lead, principal, staff, "head of", director, vp,
+     "vice president", chief, partner]
+
+apify:
+  actor: "supreme_coder~linkedin-jobs-scraper"
+  cooldown_minutes: 60
+  monthly_budget_usd: 4.00
+  price_per_1000_usd: 0.10
+  max_results_per_run: 1000
+  posted_within_first_run: r604800   # past 7 days (LinkedIn's f_TPR param)
+  posted_within_routine: r86400      # past 24 hours, for routine refreshes
+
+reed:
+  results_per_query: 300   # max results fetched per keyword search, paged in batches of 100
+  detail_concurrency: 5    # how many "fetch full description" calls run at once
+
+adzuna:
+  max_pages_per_query: 3
+  max_days_old: 14
+
+dedupe:
+  company_threshold: 92   # rapidfuzz ratio for "same company"
+  title_threshold: 90     # rapidfuzz token_set_ratio for "same job title"
+
+# A job missing from this many refreshes in a row gets marked inactive
+# (see db.mark_missing_inactive).
+inactive_after_missed_refreshes: 3
