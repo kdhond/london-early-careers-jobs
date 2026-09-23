@@ -76,8 +76,8 @@ adzuna:
   max_days_old: 14
 
 dedupe:
-  company_threshold: 92   # rapidfuzz ratio for "same company"
-  title_threshold: 90     # rapidfuzz token_set_ratio for "same job title"
+  company_threshold: 92   # rapidfuzz token_set_ratio for "same company"
+  title_threshold: 90     # rapidfuzz token_sort_ratio for "same job title"
 
 # A job missing from this many refreshes in a row gets marked inactive
 # (see db.mark_missing_inactive).

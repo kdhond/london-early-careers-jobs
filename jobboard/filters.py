@@ -131,3 +131,28 @@ def is_in_england(job: Job, settings: dict) -> bool:
         r"\b(?:" + "|".join(re.escape(k) for k in keywords) + r")\b", re.IGNORECASE
     )
     return bool(keywords_re.search(location))
+
+
+def normalise_city(location: str, settings: dict) -> str:
+    """
+    Pull a canonical city name out of a raw location string, e.g. "London,
+    England, United Kingdom" -> "London". This runs once per job right
+    after fetching (see refresh.py's "normalise" pipeline step) and its
+    result — job.city — is what dedupe.py actually compares, instead of
+    trying to fuzzy-match raw, differently-formatted location strings from
+    different sources.
+    """
+    if not location:
+        return ""
+    location_lower = location.lower()
+    if _REMOTE_UK_RE.search(location) or re.search(r"\bremote\b", location_lower):
+        return "Remote (UK)"
+
+    england_cities = settings["locations"]["england_cities"]
+    for city in england_cities:
+        if re.search(rf"\b{re.escape(city.lower())}\b", location_lower):
+            return city
+
+    # No known city name found — fall back to whatever's before the first
+    # comma (usually the most specific part of the raw location string).
+    return location.split(",")[0].strip()
