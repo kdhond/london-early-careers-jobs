@@ -664,7 +664,7 @@
   ats: ashby
   token: owkin
   website: https://owkin.com
-  category_hint: healthtech
+  category_hint: biotech-ai
 - name: Plaid
   ats: ashby
   token: plaid
@@ -760,3 +760,182 @@
   token: preply
   website: https://preply.com
   category_hint: edtech
+# Biotech / biotech-AI / VC / health-equity companies (added 2026-09-23,
+# each verified live the same way as every entry above — calling its
+# board's API and confirming it returns real job data — before being
+# committed). category_hint values here (biotech-ai, biotech-vc,
+# health-equity) are also read by categorise.py to disambiguate
+# generalist titles like "Founder's Associate"; see _HINT_TO_GENERALIST_
+# CATEGORY in categorise.py.
+- name: Isomorphic Labs
+  ats: greenhouse
+  token: isomorphiclabs
+  website: https://www.isomorphiclabs.com
+  category_hint: biotech-ai
+- name: Recursion Pharmaceuticals
+  ats: greenhouse
+  token: recursionpharmaceuticals
+  website: https://www.recursion.com
+  category_hint: biotech-ai
+- name: Generate Biomedicines
+  ats: greenhouse
+  token: generatebiomedicines
+  website: https://generatebiomedicines.com
+  category_hint: biotech-ai
+- name: Formation Bio
+  ats: greenhouse
+  token: formationbio
+  website: https://www.formation.bio
+  category_hint: biotech-ai
+- name: Forbion
+  ats: greenhouse
+  token: forbion
+  website: https://www.forbion.com
+  category_hint: biotech-vc
+- name: Unite Us
+  ats: greenhouse
+  token: uniteus
+  website: https://uniteus.com
+  category_hint: health-equity
+- name: Deep Genomics
+  ats: lever
+  token: deepgenomics
+  website: https://www.deepgenomics.com
+  category_hint: biotech-ai
+- name: Included Health
+  ats: lever
+  token: includedhealth
+  website: https://includedhealth.com
+  category_hint: health-equity
+- name: Insitro
+  ats: ashby
+  token: insitro
+  website: https://www.insitro.com
+  category_hint: biotech-ai
+- name: Latent Labs
+  ats: ashby
+  token: latentlabs
+  website: https://www.latentlabs.com
+  category_hint: biotech-ai
+- name: Chai Discovery
+  ats: ashby
+  token: chaidiscovery
+  website: https://www.chaidiscovery.com
+  category_hint: biotech-ai
+# 23 more biotech/health-tech companies (added 2026-09-25, batch-verified
+# live against ~120 candidates the same way as every entry above — most
+# "misses" from that batch are very likely real companies with real jobs,
+# just not on Greenhouse/Lever/Ashby, e.g. bigger/public biotechs tend to
+# use Workday instead, which this app doesn't support).
+- name: Natera
+  ats: greenhouse
+  token: natera
+  website: https://www.natera.com
+  category_hint: biotech-ai
+- name: Truveta
+  ats: greenhouse
+  token: truveta
+  website: https://www.truveta.com
+  category_hint: biotech-ai
+- name: Maven Clinic
+  ats: greenhouse
+  token: mavenclinic
+  website: https://www.mavenclinic.com
+  category_hint: health-equity
+- name: Flatiron Health
+  ats: greenhouse
+  token: flatironhealth
+  website: https://flatiron.com
+  category_hint: biotech-ai
+- name: Komodo Health
+  ats: greenhouse
+  token: komodohealth
+  website: https://www.komodohealth.com
+  category_hint: biotech-ai
+- name: Freenome
+  ats: greenhouse
+  token: freenome
+  website: https://www.freenome.com
+  category_hint: biotech-ai
+- name: Ginkgo Bioworks
+  ats: greenhouse
+  token: ginkgobioworks
+  website: https://www.ginkgobioworks.com
+  category_hint: biotech-ai
+- name: Altos Labs
+  ats: greenhouse
+  token: altoslabs
+  website: https://www.altoslabs.com
+  category_hint: biotech-ai
+- name: Calico Labs
+  ats: greenhouse
+  token: calicolabs
+  website: https://www.calicolabs.com
+  category_hint: biotech-ai
+- name: PathAI
+  ats: greenhouse
+  token: pathai
+  website: https://www.pathai.com
+  category_hint: biotech-ai
+- name: Tessera Therapeutics
+  ats: greenhouse
+  token: tesseratherapeutics
+  website: https://www.tesseratherapeutics.com
+  category_hint: biotech-ai
+- name: Prime Medicine
+  ats: greenhouse
+  token: primemedicine
+  website: https://www.primemedicine.com
+  category_hint: biotech-ai
+- name: Retro Biosciences
+  ats: lever
+  token: retro
+  website: https://www.retro.bio
+  category_hint: biotech-ai
+- name: Valo Health
+  ats: greenhouse
+  token: valohealth
+  website: https://www.valohealth.com
+  category_hint: biotech-ai
+- name: Healx
+  ats: lever
+  token: healx
+  website: https://healx.io
+  category_hint: biotech-ai
+- name: Cellarity
+  ats: greenhouse
+  token: cellarity
+  website: https://www.cellarity.com
+  category_hint: biotech-ai
+- name: PostEra
+  ats: lever
+  token: postera
+  website: https://postera.ai
+  category_hint: biotech-ai
+- name: Talkiatry
+  ats: ashby
+  token: talkiatry
+  website: https://www.talkiatry.com
+- name: SonderMind
+  ats: ashby
+  token: sondermind
+  website: https://www.sondermind.com
+- name: Beam Therapeutics
+  ats: greenhouse
+  token: beamtherapeutics
+  website: https://beamtx.com
+  category_hint: biotech-ai
+- name: Absci
+  ats: ashby
+  token: absci
+  website: https://www.absci.com
+  category_hint: biotech-ai
+- name: Wheel
+  ats: ashby
+  token: wheel
+  website: https://www.wheel.com
+- name: Owkin
+  ats: ashby
+  token: owkin
+  website: https://owkin.com
+  category_hint: biotech-ai
