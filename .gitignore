@@ -1,5 +1,8 @@
 .env
-data/
+# Leading slash: only the root-level data/ (the local SQLite DB), NOT
+# docs/data/ (the static jobs.json export, which must be committed for
+# GitHub Pages to serve it) — a bare "data/" pattern would match both.
+/data/
 *.db
 __pycache__/
 *.pyc

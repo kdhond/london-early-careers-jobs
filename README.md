@@ -11,20 +11,33 @@ Modelled loosely on [newgrad-jobs.com](https://www.newgrad-jobs.com/?k=hc).
 > A screenshot would go here — add one once you've run it locally and want
 > to drop `screenshot.png` into the repo.
 
+There's also a **public, static version** of this board, rebuilt once a
+day by a free GitHub Actions robot and served free by GitHub Pages — see
+[Public site](#public-site-github-pages-daily-refresh) below. It's the same
+data and the same frontend, just read-only (no Refresh button) and
+world-visible instead of local-only.
+
 ## What it does
 
 - Aggregates jobs from **LinkedIn** (via Apify, never scraped directly —
-  see below), **Reed**, **Adzuna**, and ~150 company career pages
+  see below), **Reed**, **Adzuna**, and ~180 company career pages
   (Greenhouse / Lever / Ashby boards).
-- Filters to **0–4 years' experience** and **England-only** locations.
+- Filters to **0–4 years' experience** and **England-only (or UK-remote)**
+  locations.
 - **Deduplicates** the same job seen across multiple sources into one
   listing with every apply link attached.
-- **Categorises** every job (Software Engineering, AI/ML, Data & Analytics,
-  Finance, Consulting, and 13 more) using keyword rules you can edit.
+- **Two independent classifications on every job**: a general **type**
+  category anyone can filter by (Software Engineering, AI/ML, Data &
+  Analytics, Finance, Consulting, and 12 more — `config/categories.yaml`),
+  and a personal **★ relevant** flag for the author's own biotech/VC/
+  health-equity/finance job search (`config/relevance.yaml`) — one doesn't
+  replace the other; see [Two categorisation systems](#two-categorisation-systems-type-vs-relevance) below.
 - Shows the **full description**, **extracted requirements**, salary (when
-  known), work mode, and posting date.
+  known), work mode, posting date, and the **company's real website**
+  (never a guessed URL).
 - Has a **Refresh** button that re-fetches everything, with a live
-  per-source progress panel.
+  per-source progress panel (local version only — the public site refreshes
+  itself once a day instead).
 - **Never risks getting your IP banned** — there is no direct scraping of
   LinkedIn, Indeed, Glassdoor, etc. LinkedIn data comes only from Apify,
   running on Apify's own servers.
@@ -93,6 +106,52 @@ The page's header shows current spend ("$1.20 of $4.00 used"), when
 LinkedIn last ran, and when it's next allowed to — and tells you why, if
 it was skipped.
 
+## Public site (GitHub Pages, daily refresh)
+
+The public version reuses the exact same pipeline (`jobboard/refresh.py`)
+and the exact same `data/jobs.db` — nothing about fetching, filtering,
+deduping or categorising is different. The only new piece is
+`jobboard/export_static.py`, which reads the active jobs back out and
+writes them to `docs/data/jobs.json`, a single static file. `docs/index.html`
+is a separate copy of the frontend that fetches that JSON file instead of
+a live `/api/jobs` — there is no server behind the public site at all.
+`.github/workflows/refresh.yml` runs both steps once a day
+(`0 6 * * *`, 06:00 UTC) via GitHub Actions, which is free for public repos.
+
+To set this up on your own fork:
+
+1. **Make the repo public** (Settings → General → Danger Zone) — GitHub
+   Pages' free tier requires it.
+2. **Add your API keys as Actions secrets**, not `.env` (Settings → Secrets
+   and variables → Actions): `REED_API_KEY`, `ADZUNA_APP_ID`,
+   `ADZUNA_APP_KEY`, `APIFY_TOKEN` — same names as `.env`, just stored on
+   GitHub instead, since `.env` itself is never committed.
+3. **Enable Pages** (Settings → Pages): source = `main` branch, `/docs`
+   folder.
+4. Trigger the workflow once manually (Actions tab → "Daily job refresh" →
+   "Run workflow") rather than waiting for the schedule, to confirm it
+   works end-to-end.
+
+**Why `data/jobs.db` persists via `actions/cache`, not a git commit**:
+GitHub Actions runners are thrown away after every run, so *something* has
+to carry `data/jobs.db` forward — without it, every day would start from a
+completely empty history: no "new today" counts, no inactive-job tracking,
+and critically, no memory of this month's Apify spend, which would risk
+the $4/month cap silently not applying. The database is genuinely large
+(~40MB) and grows over time, so committing it to git the way `docs/data/jobs.json`
+is committed would add that much to git history *every single day,
+forever* — roughly 14GB/year. `actions/cache` (see `.github/workflows/refresh.yml`)
+gets the same continuity without any of that: each run restores the most
+recent cached copy, updates it, and saves a fresh one, entirely outside
+git history.
+
+`docs/data/jobs.json` itself (~25MB) still has to be committed — GitHub
+Pages serves straight from the repo, so there's no way around that one.
+Repo size will grow by roughly that much per day (a private benefit of
+Actions/git being free either way, but worth knowing) — if that ever
+becomes unwieldy, periodically squashing git history is a reasonable fix,
+but not needed to get started.
+
 ## Adding a company
 
 Company career pages live in `config/companies.yaml`. Each entry:
@@ -121,18 +180,39 @@ This calls every company's board and reports OK/FAIL for each — fix or
 remove any that fail (a company may have moved ATS providers, or closed
 their board).
 
-## Adding or adjusting a category
+## Two categorisation systems: type vs. relevance
 
-Category rules live in `config/categories.yaml`, checked in order —
-**first match wins**, so put more specific categories above more general
-ones. Each category has a `name` and a list of `keywords`, matched as
-whole words/phrases (case-insensitive) against the job title first, then
-the full description if nothing matched the title.
+Every job gets tagged by two completely independent systems that answer
+different questions:
+
+- **`category`** (`config/categories.yaml`, `jobboard/categorise.py`) — a
+  general job-TYPE taxonomy (Software Engineering, Data & Analytics,
+  Finance & Accounting, Consulting & Strategy, etc.), shown as the tabs
+  across the top. This is what makes the board useful to *anyone*, not
+  just the author.
+- **`is_relevant`** (`config/relevance.yaml`, `jobboard/relevance.py`) — a
+  boolean flag for the author's own biotech/VC/health-equity/finance job
+  search, shown as a ★ next to the title and an opt-in filter toggle. A
+  job can be "Software Engineering" and not relevant, or "Healthcare &
+  Science" and relevant, or neither, or both — the two are unrelated.
+
+Both are ordered keyword-rule lists checked **first match wins** (put more
+specific categories above more general ones), matched as whole words/
+phrases (case-insensitive). `categories.yaml` falls back to matching the
+full description if nothing matched the title; `relevance.yaml` is
+deliberately **title-only** (see its file header for why — free-text
+descriptions are full of unrelated boilerplate that happens to contain a
+keyword).
 
 Note: `AI / Machine Learning` is deliberately listed before
-`Data & Analytics`, even though it reads second in the spec's numbered
-list — otherwise "Data Scientist" roles would be caught by Data &
-Analytics' own keywords before AI/ML ever got a chance to match.
+`Data & Analytics` in `categories.yaml` — otherwise "Data Scientist" roles
+would be caught by Data & Analytics' own keywords before AI/ML ever got a
+chance to match.
+
+`relevance.yaml`'s company-hint fallback (any job at one of the verified
+biotech/VC/health-equity companies in `companies.yaml` counts as relevant
+even without a keyword match) explicitly excludes software/hardware
+engineering titles — see `jobboard/relevance.py`'s `_ENGINEERING_ROLE_RE`.
 
 ## Scheduling automatic refreshes with launchd
 
@@ -189,27 +269,32 @@ paths and time to match your setup.
 ## Project structure
 
 ```
-app.py                    Flask server, routes, refresh orchestration
+app.py                    Flask server, routes, refresh orchestration (local dev/preview only)
 jobboard/
   models.py                Job dataclass (the normalised schema every source maps to)
   db.py                    SQLite schema, upserts, queries
   refresh.py                Runs the whole pipeline: fetch -> normalise -> extract -> filter -> dedupe -> categorise -> save
+  export_static.py           Reads active jobs -> docs/data/jobs.json, for the public site
   budget.py                 Apify cooldown + monthly spending cap
   extract.py                 Requirements/salary/years/work-mode extraction from descriptions
-  filters.py                  0-4 years + England-only filters
+  filters.py                  0-4 years + England-only (or UK-remote) filters
   dedupe.py                    Fuzzy duplicate detection and merging
-  categorise.py                 Keyword-rule category assignment
+  categorise.py                 General job-TYPE category assignment (public, everyone)
+  relevance.py                   Personal biotech/VC/health-equity/finance flag (author only)
   sources/
     base.py                      Shared Source interface, HTTP retry helper, YAML loader
     greenhouse.py, lever.py, ashby.py    Company career-page sources
     verify_companies.py                    Health-check for config/companies.yaml
     reed.py, adzuna.py, linkedin_apify.py  The three paid/keyed sources
 config/
-  settings.yaml               Search keywords, locations, thresholds, budget
-  companies.yaml               ~150 verified companies
-  categories.yaml               Category keyword rules
-static/index.html            The whole frontend (vanilla JS/CSS, no build step)
-tests/                        pytest suite for extract/filters/dedupe/categorise
+  settings.yaml               LinkedIn search keywords, locations, thresholds, budget
+  companies.yaml               ~180 verified companies
+  categories.yaml               General job-TYPE keyword rules
+  relevance.yaml                 Personal relevance keyword rules
+static/index.html            Local-dev frontend — talks to the live Flask API
+docs/index.html               Public-site frontend — talks to the static docs/data/jobs.json
+.github/workflows/refresh.yml  Daily GitHub Actions job (refresh + export + commit)
+tests/                        pytest suite for extract/filters/dedupe/categorise/relevance
 ```
 
 ## Running the tests

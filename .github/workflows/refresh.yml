@@ -1,0 +1,68 @@
+name: Daily job refresh
+
+# Runs the whole pipeline once a day (fetch -> filter -> dedupe ->
+# categorise -> persist -> export), then commits the static
+# docs/data/jobs.json that GitHub Pages actually serves. This is the entire
+# "backend" for the public site — there's no live server.
+#
+# data/jobs.db itself is NOT committed to git (unlike docs/data/jobs.json,
+# which has to be, since GitHub Pages serves straight from the repo) — it's
+# ~40MB and would add that much to git history every single day forever.
+# It only needs to *persist between runs* (for first-seen dates, inactive-
+# job tracking, and the Apify monthly-spend counter), which actions/cache
+# does without touching git history at all. A unique cache key per run
+# (github.run_id) plus a prefix restore-key means each run always restores
+# yesterday's DB and saves a fresh one — GitHub evicts old cache entries
+# automatically, which is fine since there's always a more-recent one by
+# the time that would matter.
+#
+# `workflow_dispatch` lets you trigger a run manually from the Actions tab,
+# for testing without waiting for the schedule.
+on:
+  schedule:
+    - cron: "0 6 * * *"  # 06:00 UTC daily
+  workflow_dispatch: {}
+
+# Needed to let this workflow push its own commit back to the repo.
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore yesterday's database
+        uses: actions/cache@v4
+        with:
+          path: data/jobs.db
+          key: jobs-db-${{ github.run_id }}
+          restore-keys: |
+            jobs-db-
+
+      - name: Run refresh
+        env:
+          REED_API_KEY: ${{ secrets.REED_API_KEY }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: python -m jobboard.refresh
+
+      - name: Export static jobs.json
+        run: python -m jobboard.export_static
+
+      - name: Commit updated jobs.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/jobs.json
+          git diff --staged --quiet && echo "No changes to commit" || git commit -m "chore: daily job refresh"
+          git push
