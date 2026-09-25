@@ -1,0 +1,157 @@
+# Personal relevance keywords (moved out of categories.yaml 2026-09-25 when
+# the public site got a general job-TYPE taxonomy back — see
+# config/categories.yaml). This file answers a completely different
+# question: "is this relevant to Kailas's own biotech/VC/health-equity/
+# finance search", regardless of what general `category` a job also gets.
+# See jobboard/relevance.py.
+#
+# "Relevant" here means: biotech/life-sciences (research, clinical, pharma),
+# biotech-flavoured AI/health-tech, biotech investing (equity research + VC),
+# health equity, plus general finance, consulting and data/AI — the person's
+# own resume plus explicit "I'm open to finance roles too, be inclusive"
+# framing. Software engineering, product, design, marketing, sales, ops, HR,
+# legal, cyber security and non-software engineering are NOT relevant.
+#
+# Keywords are matched case-insensitively as whole phrases (word boundaries
+# on each side) against the job TITLE ONLY (see `title_only` below).
+# Deliberately not falling back to the full job description: description
+# text is full of unrelated boilerplate that happens to contain these
+# words — "backed by venture capital" in a totally unrelated startup's About
+# blurb, "private healthcare" in a benefits list, "Public Health" as the UK
+# construction trade term (M&E = Mechanical, Electrical and Public Health,
+# nothing to do with epidemiology) — which was confirmed live: it mislabeled
+# things like "M&E Quantity Surveyor" and "Team Assistant" as relevant.
+#
+# A job whose title contains "Founder's Associate" / "Chief of Staff" /
+# "Entrepreneur in Residence" is NOT matched by keywords here at all — those
+# titles are sector-agnostic, so relevance.py resolves them via each
+# company's `category_hint` (config/companies.yaml) before it ever reaches
+# this keyword list. Same hint is also used as a last-resort fallback for
+# ANY other job at one of those verified biotech/VC/health-equity companies
+# that no keyword below happens to catch — EXCEPT software/hardware
+# engineering titles, which are explicitly excluded from that fallback (see
+# jobboard/relevance.py) since engineering roles aren't relevant to this
+# search even at a verified biotech company.
+
+- name: Relevant
+  title_only: true
+  keywords:
+    # Health equity / public health
+    - health equity
+    - public health
+    - community health
+    - perinatal health
+    - maternal health
+    - social determinants of health
+    - health disparities
+    - health access
+    - underserved communities
+    - care coordination
+    - population health
+    # Venture capital
+    - venture capital
+    - venture associate
+    - venture analyst
+    - venture fellow
+    - venture partner
+    - vc analyst
+    - vc associate
+    - investment fellow
+    # Equity research / investment banking
+    - equity research
+    - equity analyst
+    - biotech equity
+    - healthcare equity
+    - life sciences equity
+    - investment banking
+    - investment analyst
+    - research analyst
+    - biotech analyst
+    - healthcare analyst
+    - pharma analyst
+    - pharmaceutical analyst
+    - life sciences analyst
+    - scientific due diligence
+    - buy-side analyst
+    - sell-side analyst
+    - trading analyst
+    - trader
+    - markets analyst
+    - asset management
+    - quant analyst
+    - quantitative analyst
+    - mergers and acquisitions
+    # Biotech / health AI
+    - biotech ai
+    - health ai
+    - healthtech
+    - health tech
+    - digital health
+    - clinical ai
+    - computational biology
+    - bioinformatics
+    - drug discovery
+    - protein design
+    - precision medicine
+    - genomics
+    # Biotech, health & life sciences
+    - biotech
+    - biotechnology
+    - life sciences
+    - clinical research
+    - clinical trial
+    - biomedical
+    - pharma
+    - pharmaceutical
+    - pharmacist
+    - pharmacy
+    - nurse
+    - healthcare
+    - medical affairs
+    - regulatory affairs
+    - pharmacovigilance
+    - research scientist
+    - laboratory
+    - molecular biology
+    - immunology
+    - oncology
+    # General finance & accounting
+    - financial analyst
+    - finance analyst
+    - accountant
+    - accounting
+    - audit
+    - auditor
+    - tax analyst
+    - fp&a
+    - actuarial
+    - bookkeeper
+    # Consulting & strategy — deliberately NOT the bare words "consultant" /
+    # "consulting": recruitment agencies use "Consultant" as a generic sales
+    # job title ("Recruitment Consultant", "Luxury Sales Consultant",
+    # "Assistant Acoustic Consultant"), which isn't what's meant here.
+    # Specific phrases only.
+    - management consultant
+    - strategy consultant
+    - associate consultant
+    - consulting analyst
+    - strategy analyst
+    - management consulting
+    - strategy consulting
+    # Data, analytics & AI (general)
+    - data analyst
+    - business intelligence
+    - analytics
+    - insight analyst
+    - data engineer
+    - machine learning
+    - deep learning
+    - ml engineer
+    - artificial intelligence
+    - "ai "
+    - data scientist
+    - research engineer
+    - nlp
+    - computer vision
+    - llm
+    - ai

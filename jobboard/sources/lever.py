@@ -103,6 +103,7 @@ class LeverSource(Source):
             location=location,
             source=self.name,
             company_website=company.get("website"),
+            category_hint=company.get("category_hint"),
             employment_type=categories.get("commitment"),
             posted_at=posted_at,
             description_html=description_html,

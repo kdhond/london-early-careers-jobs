@@ -23,7 +23,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     seniority TEXT,
     years_required INTEGER,
     category TEXT DEFAULT 'Other',
+    is_relevant INTEGER DEFAULT 0,
     description_html TEXT,
     description_text TEXT,
     description_is_full INTEGER DEFAULT 0,
@@ -111,8 +112,24 @@ def get_db(path: str | Path) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row  # lets us access columns by name, e.g. row["title"]
     conn.execute("PRAGMA journal_mode=WAL")  # allows concurrent reads while a write is happening
     conn.executescript(SCHEMA)
+    _migrate_schema(conn)
     conn.commit()
     return conn
+
+
+def _migrate_schema(conn: sqlite3.Connection) -> None:
+    """
+    "CREATE TABLE IF NOT EXISTS" (in SCHEMA above) only creates a table the
+    first time a database file is opened — it never adds a column to a
+    `jobs` table that already exists from before that column was added to
+    SCHEMA. This runs on every get_db() call and adds any missing columns
+    to an existing database, so an older data/jobs.db file (e.g. the one
+    already committed by a previous day's GitHub Actions run) keeps working
+    after a schema change instead of erroring on a missing column.
+    """
+    existing_columns = {row["name"] for row in conn.execute("PRAGMA table_info(jobs)")}
+    if "is_relevant" not in existing_columns:
+        conn.execute("ALTER TABLE jobs ADD COLUMN is_relevant INTEGER DEFAULT 0")
 
 
 @contextmanager
@@ -143,6 +160,7 @@ def _row_to_job(row: sqlite3.Row) -> Job:
     d["description_is_full"] = bool(d["description_is_full"])
     d["posted_at_estimated"] = bool(d["posted_at_estimated"])
     d["is_active"] = bool(d["is_active"])
+    d["is_relevant"] = bool(d["is_relevant"])
     return Job(apply_links=apply_links, requirements=requirements, sources=sources, **d)
 
 
@@ -178,14 +196,14 @@ def upsert_job(conn: sqlite3.Connection, job: Job) -> None:
             id, title, company, company_normalised, company_website, company_logo,
             location, city, work_mode, posted_at, posted_at_estimated,
             first_seen_at, last_seen_at, salary_min, salary_max, salary_text,
-            employment_type, seniority, years_required, category,
+            employment_type, seniority, years_required, category, is_relevant,
             description_html, description_text, description_is_full,
             requirements, apply_links, sources, is_active, missed_refreshes
         ) VALUES (
             :id, :title, :company, :company_normalised, :company_website, :company_logo,
             :location, :city, :work_mode, :posted_at, :posted_at_estimated,
             :first_seen_at, :last_seen_at, :salary_min, :salary_max, :salary_text,
-            :employment_type, :seniority, :years_required, :category,
+            :employment_type, :seniority, :years_required, :category, :is_relevant,
             :description_html, :description_text, :description_is_full,
             :requirements, :apply_links, :sources, 1, 0
         )
@@ -203,7 +221,8 @@ def upsert_job(conn: sqlite3.Connection, job: Job) -> None:
             salary_min=excluded.salary_min, salary_max=excluded.salary_max,
             salary_text=excluded.salary_text, employment_type=excluded.employment_type,
             seniority=excluded.seniority, years_required=excluded.years_required,
-            category=excluded.category, description_html=excluded.description_html,
+            category=excluded.category, is_relevant=excluded.is_relevant,
+            description_html=excluded.description_html,
             description_text=excluded.description_text,
             description_is_full=excluded.description_is_full,
             requirements=excluded.requirements, apply_links=excluded.apply_links,
@@ -230,6 +249,7 @@ def upsert_job(conn: sqlite3.Connection, job: Job) -> None:
             "seniority": job.seniority,
             "years_required": job.years_required,
             "category": job.category,
+            "is_relevant": int(job.is_relevant),
             "description_html": job.description_html,
             "description_text": job.description_text,
             "description_is_full": int(job.description_is_full),
@@ -274,9 +294,22 @@ def mark_missing_inactive(
     return deactivated
 
 
-def get_active_jobs(conn: sqlite3.Connection) -> list[Job]:
-    """All jobs currently shown on the board (used by GET /api/jobs)."""
-    rows = conn.execute("SELECT * FROM jobs WHERE is_active = 1").fetchall()
+def get_active_jobs(conn: sqlite3.Connection, max_age_days: Optional[int] = None) -> list[Job]:
+    """
+    All jobs currently shown on the board (used by GET /api/jobs).
+
+    `max_age_days`, if given (see settings.yaml's max_posted_age_days), also
+    excludes jobs whose posted_at is older than that many days — evaluated
+    fresh on every call against today's date, so a job ages out of view on
+    its own rather than needing another refresh to be dropped.
+    """
+    if max_age_days is None:
+        rows = conn.execute("SELECT * FROM jobs WHERE is_active = 1").fetchall()
+    else:
+        cutoff = (datetime.now(timezone.utc).date() - timedelta(days=max_age_days)).isoformat()
+        rows = conn.execute(
+            "SELECT * FROM jobs WHERE is_active = 1 AND posted_at >= ?", (cutoff,)
+        ).fetchall()
     return [_row_to_job(r) for r in rows]
 
 

@@ -74,6 +74,7 @@ class AshbySource(Source):
             location=location,
             source=self.name,
             company_website=company.get("website"),
+            category_hint=company.get("category_hint"),
             employment_type=raw.get("employmentType"),
             work_mode="remote" if raw.get("isRemote") else "unknown",
             posted_at=(raw.get("publishedAt") or "")[:10] or None,

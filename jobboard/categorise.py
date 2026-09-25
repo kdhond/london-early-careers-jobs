@@ -1,5 +1,10 @@
 """
-Categorisation (§7): assigning each job to exactly one category.
+Categorisation (§7): assigning each job to exactly one general TYPE
+category (Software Engineering, Data & Analytics, Finance & Accounting,
+etc.) — this is the public, general-purpose classification shown as tabs
+on the site. It is entirely separate from `jobboard/relevance.py`'s
+`is_relevant` flag, which answers a different, personal question ("is this
+relevant to Kailas's biotech/VC/health-equity search"). A job gets both.
 
 The rules live in config/categories.yaml, not here — this file just reads
 that ordered list and, for each job, walks down it looking for the first

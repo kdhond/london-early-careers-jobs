@@ -37,6 +37,7 @@ from typing import Optional
 from jobboard import budget, db
 from jobboard.categorise import Categoriser, categorise_jobs
 from jobboard.dedupe import dedupe_jobs
+from jobboard.relevance import RelevanceChecker, mark_relevance
 from jobboard.extract import extract_requirements, extract_salary, extract_years_required, detect_work_mode
 from jobboard.filters import is_early_career, is_in_england, normalise_city
 from jobboard.models import Job
@@ -96,6 +97,7 @@ def run_refresh(
     conn: sqlite3.Connection,
     settings: Optional[dict] = None,
     categoriser: Optional[Categoriser] = None,
+    relevance_checker: Optional[RelevanceChecker] = None,
     force_linkedin: bool = False,
     run_id: Optional[str] = None,
     on_progress=None,
@@ -108,6 +110,7 @@ def run_refresh(
     """
     settings = settings or load_yaml("settings.yaml")
     categoriser = categoriser or Categoriser()
+    relevance_checker = relevance_checker or RelevanceChecker()
     run_id = run_id or str(uuid.uuid4())
 
     db.start_refresh_run(conn, run_id)
@@ -219,6 +222,7 @@ def run_refresh(
 
     # --- categorise --------------------------------------------------------------
     categorise_jobs(deduped, categoriser)
+    mark_relevance(deduped, relevance_checker)
 
     # --- persist -----------------------------------------------------------------
     for job in deduped:

@@ -80,6 +80,7 @@ class GreenhouseSource(Source):
             location=location,
             source=self.name,
             company_website=company.get("website"),
+            category_hint=company.get("category_hint"),
             posted_at=(raw.get("updated_at") or "")[:10] or None,  # YYYY-MM-DD prefix
             description_html=description_html,
             description_text=description_text,

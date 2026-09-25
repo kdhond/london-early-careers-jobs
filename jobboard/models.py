@@ -102,6 +102,18 @@ class Job:
     seniority: Optional[str] = None        # from the source, e.g. "Entry level"
     years_required: Optional[int] = None   # minimum years of experience, if stated
     category: str = "Other"                # assigned by categorise.py
+    # From config/companies.yaml's `category_hint` (Greenhouse/Lever/Ashby jobs
+    # only — Reed/Adzuna/LinkedIn jobs don't come from a known company, so this
+    # stays None for those). categorise.py uses it to disambiguate sector-
+    # agnostic titles like "Founder's Associate" that keyword-matching alone
+    # can't tell apart from the same title at an unrelated company.
+    category_hint: Optional[str] = None
+    # Separate from `category` above: whether this job matches Kailas's own
+    # biotech/VC/health-equity/finance search, assigned by
+    # jobboard/relevance.py — independent of what general `category` a job
+    # also has (a job can be "Software Engineering" AND not relevant, or
+    # "Healthcare & Science" AND relevant, etc.).
+    is_relevant: bool = False
 
     description_html: str = ""   # sanitised HTML, safe to render in the browser
     description_text: str = ""   # plain text version, used for searching/matching

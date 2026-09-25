@@ -1,19 +1,30 @@
-# Ordered category rules (§7). Each job is checked against these, in this
-# exact order, and the FIRST category whose keywords match the job's title
-# wins — so more specific categories must come before more general ones.
+# General job-TYPE taxonomy (§7 original design) — restored 2026-09-25 for
+# the public site. This answers "what kind of job is this" for any visitor,
+# and is completely separate from config/relevance.yaml, which answers
+# "is this relevant to Kailas specifically" (see jobboard/relevance.py).
+# A job gets both a `category` (from this file) AND an `is_relevant` flag
+# (from relevance.yaml) — one doesn't replace the other.
 #
-# Note: "AI / Machine Learning" is listed here right after "Software
-# Engineering", ahead of "Data & Analytics" — even though the spec's
-# numbered list shows Data as #2 and AI as #3 — because the spec explicitly
-# says AI/ML must be checked first, "so 'Data Scientist' goes here [in
-# AI/ML]" rather than being caught by Data & Analytics' own "data analyst"-
-# style keywords. The order in this file IS the matching priority; it's
-# not just a display order.
+# Each job is checked against these, in this exact order, and the FIRST
+# category whose keywords match the job's title wins — so more specific
+# categories must come before more general ones. "AI / Machine Learning" is
+# checked right after "Software Engineering", ahead of "Data & Analytics",
+# so "Data Scientist" lands in AI/ML rather than being caught by Data &
+# Analytics' own "data analyst"-style keywords.
 #
 # Each keyword is matched case-insensitively as a whole phrase (word
 # boundaries on each side), against the job title first, then — only if no
 # category matched on the title — against the full description. A job that
 # still matches nothing falls back to "Other".
+#
+# "Consulting & Strategy" deliberately does NOT use the bare words
+# "consultant" / "consulting" (unlike this taxonomy's original version) —
+# recruitment agencies use "Consultant" as a generic sales job title
+# ("Recruitment Consultant", "Luxury Sales Consultant"), which isn't what's
+# meant here, and since this list is checked in order, that bug would catch
+# recruitment roles here before HR & Recruitment ever got a chance to. This
+# was found and fixed once already (see relevance.yaml's history) — carried
+# over here rather than reintroduced.
 
 - name: Software Engineering
   keywords:
@@ -115,10 +126,13 @@
 
 - name: Consulting & Strategy
   keywords:
-    - consultant
-    - consulting
+    - management consultant
+    - strategy consultant
+    - associate consultant
+    - consulting analyst
     - strategy analyst
     - management consulting
+    - strategy consulting
 
 - name: Marketing & Content
   keywords:
