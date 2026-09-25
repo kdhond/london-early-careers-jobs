@@ -80,7 +80,7 @@ def index():
 
 @app.route("/api/jobs")
 def api_jobs():
-    jobs = db.get_active_jobs(_conn)
+    jobs = db.get_active_jobs(_conn, max_age_days=_settings.get("max_posted_age_days"))
     payload = []
     for job in jobs:
         d = job.to_dict()
@@ -91,7 +91,7 @@ def api_jobs():
 
 @app.route("/api/stats")
 def api_stats():
-    jobs = db.get_active_jobs(_conn)
+    jobs = db.get_active_jobs(_conn, max_age_days=_settings.get("max_posted_age_days"))
     today = datetime.now(timezone.utc).date().isoformat()
     new_today = sum(1 for job in jobs if (job.first_seen_at or "")[:10] == today)
 
