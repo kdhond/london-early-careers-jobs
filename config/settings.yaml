@@ -13,8 +13,18 @@ locations:
      Reading, Brighton, Newcastle, Nottingham, Sheffield, Liverpool,
      Milton Keynes, Southampton, Leicester, Coventry, York, Bath, Guildford]
 
-# Broad keywords used to search Reed, Adzuna and LinkedIn (via Apify), so
-# between them the searches cover every category in categories.yaml.
+# Keywords used to search LinkedIn (via Apify) ONLY — see linkedin_apify.py.
+#
+# Reed and Adzuna used to be searched with this same list too, but that
+# meant any job whose title didn't contain one of these words was silently
+# never fetched at all, no matter how good categories.yaml/relevance.yaml
+# were at classifying it afterwards (confirmed live: dropping the keyword
+# entirely and searching by location alone returned ~20x more real results
+# from both APIs). Reed/Adzuna now search by location only (see reed.py /
+# adzuna.py) and don't use this list. LinkedIn still needs it: unlike Reed/
+# Adzuna, Apify's actor charges real money per result, so deliberately
+# narrowing LinkedIn's search is the correct tradeoff there, not a
+# limitation to work around.
 search_keywords:
   - graduate
   - junior
@@ -31,6 +41,18 @@ search_keywords:
   - operations
   - sales
   - intern
+  - biotech
+  - life sciences
+  - pharma
+  - pharmaceutical
+  - clinical research
+  - bioinformatics
+  - computational biology
+  - venture capital
+  - equity research
+  - health equity
+  - public health
+  - digital health
 
 experience:
   max_years: 4
@@ -59,20 +81,31 @@ apify:
   # linkedin_apify.py), so a full refresh pays this fee once per keyword —
   # budget.py accounts for that when deciding whether a run is affordable.
   actor_start_fee_usd: 0.001
-  # Sized so that one refresh a day, every day, stays within the $4/month
-  # cap: (4.00 / 30 days) minus the daily start-fee overhead, divided by
-  # the per-result price, comes out to about 300 results/day. Raise this
-  # if you refresh less often than daily.
-  max_results_per_run: 290
+  # Sized so that one refresh a day, EVERY day of a 30-day month, stays
+  # comfortably under the $4/month cap with no skipped days: (4.00 / 30
+  # days) minus the daily start-fee overhead (27 keywords x $0.001 =
+  # $0.027/day), divided by the per-result price ($0.0004), comes out to
+  # ~266 results/day — set a little below that for margin. (Previously 290,
+  # which actually worked out to ~$4.29/month once the biotech keywords
+  # brought the keyword count to 27 — the hard budget cap in budget.py
+  # never let it overspend, but it would start skipping days near the end
+  # of the month. This value removes that.)
+  max_results_per_run: 260
   posted_within_first_run: r604800   # past 7 days (LinkedIn's f_TPR param)
   posted_within_routine: r86400      # past 24 hours, for routine refreshes
 
 reed:
-  results_per_query: 300   # max results fetched per keyword search, paged in batches of 100
+  # Max results fetched per LOCATION pass (paged in batches of 100), not per
+  # keyword any more — see reed.py. Raised from 300 now that this covers
+  # every job in the area instead of one keyword's slice of it.
+  results_per_query: 2000
   detail_concurrency: 5    # how many "fetch full description" calls run at once
 
 adzuna:
-  max_pages_per_query: 3
+  # Max pages fetched per LOCATION pass (50 results/page), not per keyword
+  # any more — see adzuna.py. Raised from 3 (150 results) now that this
+  # covers every job in the area instead of one keyword's slice of it.
+  max_pages_per_query: 40
   max_days_old: 14
 
 dedupe:
@@ -82,3 +115,10 @@ dedupe:
 # A job missing from this many refreshes in a row gets marked inactive
 # (see db.mark_missing_inactive).
 inactive_after_missed_refreshes: 3
+
+# Jobs older than this (by posted_at, which falls back to first-seen date
+# when a source doesn't give one — see db.upsert_job) are hidden from the
+# board. This is a display-time filter (db.get_active_jobs), re-evaluated on
+# every page load, not a fetch-time filter — a job doesn't need a fresh
+# refresh to age out once it crosses this cutoff.
+max_posted_age_days: 21

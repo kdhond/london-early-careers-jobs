@@ -49,7 +49,6 @@ class ReedSource(Source):
         self.conn = conn
         self.api_key = os.getenv("REED_API_KEY")
         settings = load_yaml("settings.yaml")
-        self.keywords: list[str] = settings["search_keywords"]
         self.results_per_query: int = settings["reed"]["results_per_query"]
         self.detail_concurrency: int = settings["reed"]["detail_concurrency"]
 
@@ -67,31 +66,30 @@ class ReedSource(Source):
 
         raw_jobs_by_id: dict[str, dict] = {}
         with httpx.Client(auth=auth, headers=headers) as client:
-            # Search once per keyword, once for London and once with no
-            # location filter (so we also catch England-wide postings) —
-            # the general location filter downstream (filters.py) will drop
-            # anything that isn't actually in England.
-            for keyword in self.keywords:
-                for location_name in ("London", None):
-                    for raw in self._search(client, keyword, location_name):
-                        # Different keyword searches often return the same
-                        # job; keep only one copy per Reed job id.
-                        raw_jobs_by_id[str(raw["jobId"])] = raw
+            # No `keywords` param at all: search by location only, so we
+            # aren't limited to jobs whose title happens to contain one of
+            # our configured search words. Live-checked against Reed's real
+            # API: London alone returns ~27,000 total results vs. ~1,300
+            # for keyword="graduate" — keyword search was silently missing
+            # the vast majority of jobs. Two passes (London, then no
+            # location at all) so England-wide/remote postings are caught
+            # too — the location filter downstream (filters.py) drops
+            # anything that isn't actually in England or UK-remote.
+            for location_name in ("London", None):
+                for raw in self._search(client, location_name):
+                    raw_jobs_by_id[str(raw["jobId"])] = raw
 
             self._fill_full_descriptions(client, raw_jobs_by_id)
 
         return [self._to_job(raw) for raw in raw_jobs_by_id.values()]
 
-    def _search(
-        self, client: httpx.Client, keyword: str, location_name: Optional[str]
-    ) -> list[dict]:
-        """Page through Reed's search results for one keyword/location combination."""
+    def _search(self, client: httpx.Client, location_name: Optional[str]) -> list[dict]:
+        """Page through Reed's search results for one location (no keyword filter)."""
         results: list[dict] = []
         skip = 0
         page_size = 100  # Reed's max page size
         while len(results) < self.results_per_query:
             params = {
-                "keywords": keyword,
                 "distanceFromLocation": 25,
                 "resultsToTake": page_size,
                 "resultsToSkip": skip,

@@ -79,7 +79,16 @@ def is_early_career(job: Job, settings: dict) -> bool:
 # Location filter (§6.2)
 # ---------------------------------------------------------------------------
 
-_REMOTE_UK_RE = re.compile(r"remote.*(uk|united kingdom|england)|(uk|united kingdom|england).*remote", re.IGNORECASE)
+
+# A bare "Remote" (no country mentioned) counts as in-England — deliberately
+# loose. Reed and Adzuna are UK-only job boards to begin with, so an
+# unqualified "Remote" from them is overwhelmingly a UK remote role, and a
+# genuinely non-UK remote posting ("Remote (US)", "Remote - United States")
+# still gets caught by _NOT_ENGLAND_RE below, which is checked first. Was
+# previously `remote.*(uk|united kingdom|england)` — too strict, since most
+# UK postings just say "Remote" with no qualifier at all and were being
+# silently dropped.
+_REMOTE_RE = re.compile(r"\bremote\b", re.IGNORECASE)
 
 # Other UK nations, plus a handful of other countries that show up a lot
 # in the global company boards (Greenhouse/Lever/Ashby jobs for companies
@@ -120,7 +129,7 @@ def is_in_england(job: Job, settings: dict) -> bool:
     if _NOT_ENGLAND_RE.search(location):
         return False
 
-    if _REMOTE_UK_RE.search(location):
+    if _REMOTE_RE.search(location):
         return True
 
     england_cities = settings["locations"]["england_cities"]
@@ -145,7 +154,7 @@ def normalise_city(location: str, settings: dict) -> str:
     if not location:
         return ""
     location_lower = location.lower()
-    if _REMOTE_UK_RE.search(location) or re.search(r"\bremote\b", location_lower):
+    if _REMOTE_RE.search(location):
         return "Remote (UK)"
 
     england_cities = settings["locations"]["england_cities"]

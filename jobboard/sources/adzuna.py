@@ -42,7 +42,6 @@ class AdzunaSource(Source):
         self.app_id = os.getenv("ADZUNA_APP_ID")
         self.app_key = os.getenv("ADZUNA_APP_KEY")
         settings = load_yaml("settings.yaml")
-        self.keywords: list[str] = settings["search_keywords"]
         self.max_pages_per_query: int = settings["adzuna"]["max_pages_per_query"]
         self.max_days_old: int = settings["adzuna"]["max_days_old"]
 
@@ -56,27 +55,35 @@ class AdzunaSource(Source):
         headers = {"User-Agent": USER_AGENT}
         jobs_by_id: dict[str, Job] = {}
         with httpx.Client(headers=headers) as client:
-            for keyword in self.keywords:
+            # No `what` (keyword) param: search by location only. Live-
+            # checked against Adzuna's real API: London alone returns
+            # ~110,000 total results vs. ~640 for what="graduate" — keyword
+            # search was silently missing almost everything. Two passes
+            # ("London", then no `where` at all) so nationwide/remote
+            # postings are caught too, same reasoning as reed.py — the
+            # location filter downstream (filters.py) drops anything not
+            # actually in England or UK-remote.
+            for where in ("London", None):
                 for page in range(1, self.max_pages_per_query + 1):
-                    raws = self._search(client, keyword, page)
+                    raws = self._search(client, where, page)
                     if not raws:
-                        break  # ran out of pages for this keyword
+                        break  # ran out of pages for this location
                     for raw in raws:
                         job = self._to_job(raw)
-                        jobs_by_id[job.id] = job  # dedupe across keyword/page overlap
+                        jobs_by_id[job.id] = job  # dedupe across location/page overlap
         return list(jobs_by_id.values())
 
-    def _search(self, client: httpx.Client, keyword: str, page: int) -> list[dict]:
+    def _search(self, client: httpx.Client, where: Optional[str], page: int) -> list[dict]:
         url = SEARCH_URL.format(page=page)
         params = {
             "app_id": self.app_id,
             "app_key": self.app_key,
-            "what": keyword,
-            "where": "London",
             "results_per_page": 50,
             "max_days_old": self.max_days_old,
             "content-type": "application/json",
         }
+        if where:
+            params["where"] = where
         resp = request_with_retry(client, "GET", url, params=params)
         if resp.status_code != 200:
             return []
