@@ -20,7 +20,7 @@ before writing this mapping.
 
 Unlike the actor the spec described, this one takes one keyword and one
 location per call (not a list of full LinkedIn search URLs) — so a full
-LinkedIn search means one actor run per keyword in search_keywords, all
+LinkedIn search means one actor run per keyword in linkedin_search_keywords, all
 searching the single location "England, United Kingdom" (which already
 covers London). That's a deliberate cost-saving choice: this actor charges
 a small flat fee every time it starts, on top of its per-result price, so
@@ -65,7 +65,7 @@ class LinkedInApifySource(Source):
         settings = load_yaml("settings.yaml")
         self.token = self._read_token()
         self.apify_settings = settings["apify"]
-        self.keywords: list[str] = settings["search_keywords"]
+        self.keywords: list[str] = settings["linkedin_search_keywords"]
         self.skip_reason: Optional[str] = None  # set by refresh.py if this source is skipped
 
     @staticmethod

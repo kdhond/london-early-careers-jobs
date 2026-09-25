@@ -78,7 +78,7 @@ def check_apify_budget(
     actor_start_fee = apify_settings.get("actor_start_fee_usd", 0.0)
     # One actor run per search keyword (the actor takes a single
     # keyword/location per call) — see linkedin_apify.py.
-    num_searches = len(settings["search_keywords"])
+    num_searches = len(settings["linkedin_search_keywords"])
 
     spend_so_far = db.get_apify_spend_this_month(conn)
     estimated_cost = estimate_run_cost(max_results, price_per_1000, num_searches, actor_start_fee)

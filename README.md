@@ -97,10 +97,23 @@ Two independent safety limits, both in `config/settings.yaml` under
   applies — even "Force LinkedIn refresh" can't bypass it, only the
   cooldown.
 
-`max_results_per_run` (default 290) is sized so that **one refresh a day,
+`max_results_per_run` (default 300) is sized so that **one refresh a day,
 every day, comfortably fits inside the $4/month cap** (see the comment in
 `config/settings.yaml` for the exact math). If you refresh less often than
 daily, you can safely raise it.
+
+This budget is split evenly across every keyword in
+`linkedin_search_keywords` (one Apify run per keyword — LinkedIn's own
+actor only takes one keyword/location per call). That list is
+**LinkedIn-only** and deliberately short (11 keywords, focused on biotech/
+health-equity/VC/startup roles) — Reed and Adzuna search by location
+instead and don't use it at all. A longer, more generic keyword list here
+was confirmed live to be the reason LinkedIn contributed almost nothing
+next to Reed/Adzuna: splitting the same budget across 27 keywords left
+only ~9 results per keyword. Since Reed/Adzuna already cover the broad,
+generic early-career market exhaustively for free, LinkedIn's limited paid
+budget is better spent entirely on the niche this board actually cares
+about.
 
 The page's header shows current spend ("$1.20 of $4.00 used"), when
 LinkedIn last ran, and when it's next allowed to — and tells you why, if

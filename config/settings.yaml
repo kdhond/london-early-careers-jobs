@@ -21,38 +21,33 @@ locations:
 # were at classifying it afterwards (confirmed live: dropping the keyword
 # entirely and searching by location alone returned ~20x more real results
 # from both APIs). Reed/Adzuna now search by location only (see reed.py /
-# adzuna.py) and don't use this list. LinkedIn still needs it: unlike Reed/
-# Adzuna, Apify's actor charges real money per result, so deliberately
-# narrowing LinkedIn's search is the correct tradeoff there, not a
-# limitation to work around.
-search_keywords:
-  - graduate
-  - junior
-  - entry level
-  - associate
-  - analyst
-  - software engineer
-  - data
-  - marketing
-  - finance
-  - consultant
-  - product
-  - designer
-  - operations
-  - sales
-  - intern
+# adzuna.py) and don't use this list at all any more.
+#
+# LinkedIn still needs a keyword list, for a different reason: unlike Reed/
+# Adzuna, Apify's actor charges real money per result, so the whole search
+# is capped at apify.max_results_per_run, split evenly across every keyword
+# here (one Apify run per keyword — see linkedin_apify.py). With the old
+# 27-keyword generic list, that meant ~9 results PER KEYWORD per refresh —
+# confirmed live as the reason LinkedIn contributed almost nothing (119
+# jobs) next to Reed/Adzuna's thousands. Since Reed/Adzuna now already
+# cover the broad, generic early-career market exhaustively for free,
+# LinkedIn's limited paid budget is better spent entirely on the harder-to-
+# find niche this board actually cares about — biotech/health-equity/VC/
+# startup roles — rather than diluted across generic terms Reed/Adzuna
+# already find in bulk. This shorter list roughly triples the results-per-
+# keyword within the same monthly spend.
+linkedin_search_keywords:
   - biotech
   - life sciences
-  - pharma
   - pharmaceutical
   - clinical research
-  - bioinformatics
   - computational biology
   - venture capital
   - equity research
   - health equity
   - public health
   - digital health
+  - startup
 
 experience:
   max_years: 4
@@ -83,14 +78,17 @@ apify:
   actor_start_fee_usd: 0.001
   # Sized so that one refresh a day, EVERY day of a 30-day month, stays
   # comfortably under the $4/month cap with no skipped days: (4.00 / 30
-  # days) minus the daily start-fee overhead (27 keywords x $0.001 =
-  # $0.027/day), divided by the per-result price ($0.0004), comes out to
-  # ~266 results/day — set a little below that for margin. (Previously 290,
-  # which actually worked out to ~$4.29/month once the biotech keywords
-  # brought the keyword count to 27 — the hard budget cap in budget.py
-  # never let it overspend, but it would start skipping days near the end
-  # of the month. This value removes that.)
-  max_results_per_run: 260
+  # days) minus the daily start-fee overhead (11 keywords x $0.001 =
+  # $0.011/day), divided by the per-result price ($0.0004), comes out to
+  # ~306 results/day — set a little below that for margin. Raised from 260
+  # now that linkedin_search_keywords is down to 11 focused keywords (was
+  # 27 generic ones) — fewer keywords means less start-fee overhead, which
+  # frees up more of the same $4/month for actual results. Combined with
+  # the shorter keyword list, this takes LinkedIn from ~9 results/keyword
+  # to ~27 results/keyword — a 3x improvement in useful yield at the same
+  # monthly spend, confirmed live as the fix for LinkedIn contributing
+  # almost nothing (119 jobs) next to Reed/Adzuna's thousands.
+  max_results_per_run: 300
   posted_within_first_run: r604800   # past 7 days (LinkedIn's f_TPR param)
   posted_within_routine: r86400      # past 24 hours, for routine refreshes
 
