@@ -17,18 +17,17 @@ TITLE_TO_EXPECTED_RELEVANCE = [
     ("Maternal Health Program Manager", True),
     ("Community Health Coordinator", True),
     ("Population Health Analyst", True),
-    # Venture capital
-    ("Venture Capital Analyst", True),
-    ("Venture Associate", True),
-    ("VC Analyst", True),
-    ("Venture Partner", True),
-    # Equity research / investment banking
-    ("Equity Research Analyst", True),
-    ("Investment Banking Analyst", True),
+    # Venture capital — bio/health/pharma-qualified only (2026-09-30 rework)
+    ("Biotech Venture Associate", True),
+    ("Healthcare VC Analyst", True),
+    ("Life Sciences Venture Partner", True),
+    ("Digital Health Venture Capital Analyst", True),
+    # Equity research / investment banking — bio/health/pharma-qualified only
     ("Biotech Equity Analyst", True),
     ("Healthcare Analyst, Investment Bank", True),
-    ("Graduate Trader", True),
-    ("Quantitative Analyst", True),
+    ("Biotech Equity Research Analyst", True),
+    ("Healthcare Investment Banking Analyst", True),
+    ("Pharma Equity Research Associate", True),
     # Biotech / health AI
     ("Biotech AI Research Scientist", True),
     ("Digital Health Product Analyst", True),
@@ -43,20 +42,19 @@ TITLE_TO_EXPECTED_RELEVANCE = [
     ("Regulatory Affairs Associate", True),
     ("Pharmacovigilance Officer", True),
     ("Graduate Pharmacist", True),
-    # General finance & accounting
-    ("Financial Analyst", True),
-    ("Graduate Accountant", True),
-    ("Tax Analyst", True),
-    ("FP&A Analyst", True),
+    # Biology-specific titles — added 2026-09-30, "more emphasis on biology
+    # and life sciences roles that could use some AI but aren't AI primarily."
+    ("Biologist", True),
+    ("Cell Biology Research Assistant", True),
+    ("Epidemiology Analyst", True),
+    ("Preclinical Scientist", True),
+    ("Medical Science Liaison", True),
+    ("Translational Research Associate", True),
+    ("Biostatistics Graduate", True),
+    ("Toxicology Associate", True),
     # Consulting & strategy
     ("Management Consultant", True),
     ("Strategy Analyst", True),
-    # Data, analytics & AI (general)
-    ("Data Scientist", True),
-    ("Machine Learning Engineer", True),
-    ("Data Analyst", True),
-    ("Business Intelligence Analyst", True),
-    ("NLP Research Engineer", True),
     # Not relevant — everything not in the above
     ("Graduate Software Engineer", False),
     ("Product Manager", False),
@@ -77,6 +75,33 @@ TITLE_TO_EXPECTED_RELEVANCE = [
     ("Luxury Sales Consultant", False),
     ("Assistant Acoustic Consultant", False),
     ("Operational Technology Consultant", False),
+    # Generic finance/VC/accounting — removed 2026-09-30, no longer relevant
+    # without a biotech/healthcare/pharma/life-sciences qualifier in the
+    # title (bare "Investment Analyst"/"Venture Associate" matched ANY
+    # sector, not just biotech).
+    ("Venture Capital Analyst", False),
+    ("Venture Associate", False),
+    ("VC Analyst", False),
+    ("Venture Partner", False),
+    ("Equity Research Analyst", False),
+    ("Investment Banking Analyst", False),
+    ("Graduate Trader", False),
+    ("Quantitative Analyst", False),
+    ("Financial Analyst", False),
+    ("Graduate Accountant", False),
+    ("Tax Analyst", False),
+    ("FP&A Analyst", False),
+    # Generic AI/ML/data — removed 2026-09-30, "ml and ai engineering roles
+    # i dont really qualify for": real-world example was IQVIA's "Agentic
+    # AI, Data Engineer COA Accelerator", a pure data-engineering build role
+    # that isn't a biology one, sneaking into Relevant via bare "ai"/"data
+    # engineer" keywords.
+    ("Data Scientist", False),
+    ("Machine Learning Engineer", False),
+    ("Data Analyst", False),
+    ("Business Intelligence Analyst", False),
+    ("NLP Research Engineer", False),
+    ("Agentic AI, Data Engineer COA Accelerator", False),
 ]
 
 
@@ -206,3 +231,33 @@ class TestEngineeringRolesExcludedFromHintFallback:
         # a general regression of the hint fallback.
         job = make_job(title="Office Manager", category_hint="biotech-ai")
         assert checker.is_relevant(job) is True
+
+    def test_data_engineer_at_biotech_ai_company_is_not_relevant(self, checker, make_job):
+        # Added 2026-09-30: Kailas has a biomedical sciences background, not
+        # an ML/AI engineering one — a data/ML/AI engineering build role
+        # isn't relevant even at a verified biotech company.
+        job = make_job(title="Data Engineer", category_hint="biotech-ai")
+        assert checker.is_relevant(job) is False
+
+    def test_ml_engineer_at_health_equity_company_is_not_relevant(self, checker, make_job):
+        job = make_job(title="Machine Learning Engineer", category_hint="health-equity")
+        assert checker.is_relevant(job) is False
+
+
+class TestGenericFinanceTitleStillCaughtByHintFallback:
+    """
+    2026-09-30: bare finance/VC titles (e.g. "Venture Associate") no longer
+    match any keyword on their own — they need a biotech/healthcare/pharma
+    qualifier in the title. But a generic finance/VC title at a company
+    we've already verified as biotech-VC/biotech-ai/health-equity should
+    still come through, via the same hint fallback as any other generic
+    role there (see TestHintFallbackForNonGeneralistTitles).
+    """
+
+    def test_venture_associate_at_biotech_vc_company_is_relevant(self, checker, make_job):
+        job = make_job(title="Venture Associate", category_hint="biotech-vc")
+        assert checker.is_relevant(job) is True
+
+    def test_venture_associate_with_no_hint_is_not_relevant(self, checker, make_job):
+        job = make_job(title="Venture Associate", category_hint=None)
+        assert checker.is_relevant(job) is False

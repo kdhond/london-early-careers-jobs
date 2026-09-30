@@ -30,15 +30,22 @@ _GENERALIST_STARTUP_ROLE_RE = re.compile(
 
 # A job at one of the verified biotech/VC/health-equity companies still
 # counts as relevant even if no keyword below matches its title (see
-# _HINTED_COMPANY_SECTORS below) — EXCEPT a software/hardware engineering
-# role, which isn't relevant to this search no matter how good the company
-# is. Added 2026-09-25: "i dont want software engineering jobs as relevant
-# to me."
+# _HINTED_COMPANY_SECTORS below) — EXCEPT an engineering role, which isn't
+# relevant to this search no matter how good the company is. Added
+# 2026-09-25: "i dont want software engineering jobs as relevant to me."
+# Extended 2026-09-30 to data/ML/AI engineering titles too — Kailas has a
+# biomedical sciences background, not an ML/AI engineering one, and a
+# generic "Data Engineer"/"ML Engineer" build role at a biotech company
+# isn't something he's qualified for, same as a plain Software Engineer
+# role there wouldn't be.
 _ENGINEERING_ROLE_RE = re.compile(
     r"\bsoftware engineer\b|\bdeveloper\b|\bbackend\b|\bback-end\b|\bfrontend\b|"
     r"\bfront-end\b|\bfull stack\b|\bfull-stack\b|\bmobile engineer\b|\bios\b|"
     r"\bandroid\b|\bdevops\b|\bsre\b|\bsite reliability\b|\bplatform engineer\b|"
-    r"\bqa engineer\b|\btest engineer\b|\bhardware engineer\b",
+    r"\bqa engineer\b|\btest engineer\b|\bhardware engineer\b|"
+    r"\bdata engineer\b|\bml engineer\b|\bmachine learning engineer\b|"
+    r"\bai engineer\b|\bresearch engineer\b|\bnlp engineer\b|"
+    r"\bcomputer vision engineer\b",
     re.IGNORECASE,
 )
 

@@ -7,7 +7,7 @@
 #
 # "Relevant" here means: biotech/life-sciences (research, clinical, pharma),
 # biotech-flavoured AI/health-tech, biotech investing (equity research + VC),
-# health equity, plus general finance, consulting and data/AI — the person's
+# health equity, plus general finance/consulting and data/AI — the person's
 # own resume plus explicit "I'm open to finance roles too, be inclusive"
 # framing. Software engineering, product, design, marketing, sales, ops, HR,
 # legal, cyber security and non-software engineering are NOT relevant.
@@ -28,10 +28,29 @@
 # company's `category_hint` (config/companies.yaml) before it ever reaches
 # this keyword list. Same hint is also used as a last-resort fallback for
 # ANY other job at one of those verified biotech/VC/health-equity companies
-# that no keyword below happens to catch — EXCEPT software/hardware
-# engineering titles, which are explicitly excluded from that fallback (see
-# jobboard/relevance.py) since engineering roles aren't relevant to this
-# search even at a verified biotech company.
+# that no keyword below happens to catch — EXCEPT software/hardware/data/ML/
+# AI engineering titles, which are explicitly excluded from that fallback
+# (see jobboard/relevance.py) since engineering roles aren't relevant to
+# this search even at a verified biotech company.
+#
+# 2026-09-30 rework: Kailas has a biomedical sciences background, not an ML/
+# AI engineering one — a generic "Data Engineer"/"ML Engineer"/"AI Engineer"
+# title he isn't qualified for was sneaking into Relevant just because the
+# posting mentioned "AI" or "data engineer" (e.g. IQVIA's "Agentic AI, Data
+# Engineer COA Accelerator" — a pure data-engineering build role, not a
+# biology one). Generic finance/VC titles had the same problem: "Investment
+# Analyst"/"Venture Associate" matched regardless of sector, even at a
+# totally unrelated (non-biotech) fund. Fix: removed the old generic
+# "Data, analytics & AI (general)" and "General finance & accounting"
+# buckets entirely, and narrowed the VC/equity-research bucket to require an
+# explicit biotech/healthcare/pharma/life-sciences qualifier IN THE TITLE.
+# A generic finance/VC/data role at a company we've separately verified as
+# biotech/VC/health-equity (config/companies.yaml's category_hint) still
+# gets through via the hint fallback in relevance.py — this only stops
+# UNQUALIFIED generic titles from sources (Reed/Adzuna/LinkedIn) that carry
+# no company hint at all. Biology/life-sciences titles were also expanded,
+# per "more emphasis on biology and life sciences roles that could use some
+# AI but aren't AI primarily."
 
 - name: Relevant
   title_only: true
@@ -48,40 +67,54 @@
     - underserved communities
     - care coordination
     - population health
-    # Venture capital
-    - venture capital
-    - venture associate
-    - venture analyst
-    - venture fellow
-    - venture partner
-    - vc analyst
-    - vc associate
-    - investment fellow
-    # Equity research / investment banking
-    - equity research
-    - equity analyst
+    # Venture capital — bio/health/pharma-qualified only (see 2026-09-30
+    # note above: bare "venture capital"/"venture associate"/"vc analyst"
+    # etc. matched any sector, not just biotech, and were removed).
+    - biotech venture
+    - healthcare venture
+    - health venture
+    - life sciences venture
+    - biotech vc
+    - healthcare vc
+    - life sciences vc
+    - digital health venture
+    - biotech venture capital
+    - healthcare venture capital
+    - life sciences venture capital
+    - biotech investor
+    - healthcare investor
+    - life sciences investor
+    # Equity research / investment banking — same bio/health/pharma
+    # qualification as VC above (bare "equity research"/"investment
+    # banking"/"investment analyst"/"research analyst" removed 2026-09-30,
+    # see note above).
     - biotech equity
     - healthcare equity
     - life sciences equity
-    - investment banking
-    - investment analyst
-    - research analyst
     - biotech analyst
     - healthcare analyst
     - pharma analyst
     - pharmaceutical analyst
     - life sciences analyst
     - scientific due diligence
-    - buy-side analyst
-    - sell-side analyst
-    - trading analyst
-    - trader
-    - markets analyst
-    - asset management
-    - quant analyst
-    - quantitative analyst
-    - mergers and acquisitions
-    # Biotech / health AI
+    - biotech equity research
+    - healthcare equity research
+    - life sciences equity research
+    - pharma equity research
+    - biotech investment banking
+    - healthcare investment banking
+    - life sciences investment banking
+    - biotech investment analyst
+    - healthcare investment analyst
+    - life sciences investment analyst
+    - biotech private equity
+    - healthcare private equity
+    - life sciences private equity
+    - biotech M&A
+    - healthcare M&A
+    # Biotech / health AI — AI keywords are ONLY relevant when they're
+    # explicitly biology/health-flavoured, never bare "AI"/"machine
+    # learning"/"data engineer" (see 2026-09-30 note above).
     - biotech ai
     - health ai
     - healthtech
@@ -94,12 +127,19 @@
     - protein design
     - precision medicine
     - genomics
-    # Biotech, health & life sciences
+    # Biotech, health & life sciences — expanded 2026-09-30 to give this
+    # bucket (Kailas's actual background) more coverage, since it's now the
+    # primary route into Relevant rather than generic AI/data keywords.
     - biotech
     - biotechnology
     - life sciences
+    - life science
+    - biologist
+    - biology
     - clinical research
     - clinical trial
+    - clinical operations
+    - clinical development
     - biomedical
     - pharma
     - pharmaceutical
@@ -108,24 +148,31 @@
     - nurse
     - healthcare
     - medical affairs
+    - medical writer
+    - medical science liaison
     - regulatory affairs
     - pharmacovigilance
     - research scientist
     - laboratory
     - molecular biology
+    - cell biology
+    - structural biology
+    - microbiology
     - immunology
     - oncology
-    # General finance & accounting
-    - financial analyst
-    - finance analyst
-    - accountant
-    - accounting
-    - audit
-    - auditor
-    - tax analyst
-    - fp&a
-    - actuarial
-    - bookkeeper
+    - virology
+    - neuroscience
+    - toxicology
+    - biochemistry
+    - biostatistics
+    - epidemiology
+    - translational research
+    - translational medicine
+    - preclinical
+    - biomanufacturing
+    - bioprocess
+    - process development
+    - protein engineering
     # Consulting & strategy — deliberately NOT the bare words "consultant" /
     # "consulting": recruitment agencies use "Consultant" as a generic sales
     # job title ("Recruitment Consultant", "Luxury Sales Consultant",
@@ -138,20 +185,3 @@
     - strategy analyst
     - management consulting
     - strategy consulting
-    # Data, analytics & AI (general)
-    - data analyst
-    - business intelligence
-    - analytics
-    - insight analyst
-    - data engineer
-    - machine learning
-    - deep learning
-    - ml engineer
-    - artificial intelligence
-    - "ai "
-    - data scientist
-    - research engineer
-    - nlp
-    - computer vision
-    - llm
-    - ai
