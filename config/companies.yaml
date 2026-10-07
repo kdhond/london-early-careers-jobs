@@ -939,3 +939,23 @@
   token: owkin
   website: https://owkin.com
   category_hint: biotech-ai
+- name: Zoe
+  ats: ashby
+  token: zoe
+  website: https://zoe.com
+  category_hint: healthtech
+- name: Causaly
+  ats: ashby
+  token: causaly
+  website: https://www.causaly.com
+  category_hint: biotech-ai
+- name: Limbic
+  ats: ashby
+  token: limbic
+  website: https://www.limbic.ai
+  category_hint: healthtech
+- name: Benchling
+  ats: ashby
+  token: benchling
+  website: https://www.benchling.com
+  category_hint: biotech-ai
