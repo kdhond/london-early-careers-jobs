@@ -291,7 +291,9 @@ class TestHintFallbackIsSelective:
 
     def test_support_roles_not_rescued(self, make_job):
         checker = RelevanceChecker(rules=self.RULES)
-        for title in ["Revenue Cycle Trainer", "Care Coach", "Patient Coordinator", "Billing Specialist Associate",
+        for title in ["Legal Counsel - 1 year Fixed Term Contract", "Application Security Engineer", "Product Engineer",
+                      "Product Manager - Data and Analytics", "Senior Marketing Manager", "Revenue Cycle Trainer",
+                      "Care Coach", "Patient Coordinator", "Billing Specialist Associate",
                       "Member Care Advocate", "Software Engineering Intern", "Workday Systems Analyst – Finance",
                       "Candidate Experience Coordinator"]:
             assert not checker.is_relevant(make_job(title=title, category_hint="biotech-ai")), title

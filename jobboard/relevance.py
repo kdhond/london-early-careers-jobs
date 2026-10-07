@@ -46,7 +46,8 @@ _ENGINEERING_ROLE_RE = re.compile(
     r"\bdata engineer\b|\bml engineer\b|\bmachine learning engineer\b|"
     r"\bai engineer\b|\bresearch engineer\b|\bnlp engineer\b|"
     r"\bcomputer vision engineer\b|\bsoftware engineering\b|\bnetwork engineer\b|"
-    r"\bcloud engineer\b|\bsystems analyst\b|\bit business systems\b|\bit support\b",
+    r"\bcloud engineer\b|\bsystems analyst\b|\bit business systems\b|\bit support\b|"
+    r"\bsecurity engineer\b|\bapplication security\b|\bproduct engineer\b|\bcyber",
     re.IGNORECASE,
 )
 
@@ -66,7 +67,12 @@ _LOW_FIT_SUPPORT_ROLE_RE = re.compile(
     r"\bsupport operations\b|\bcandidate experience\b|\brecruiter\b|\btalent acquisition\b|"
     r"\bpayroll\b|\baccounts (?:payable|receivable)\b|\badministrator\b|\breceptionist\b|"
     r"\boffice manager\b|\bfacilities\b|\bexecutive assistant\b|\bdata reviewer\b|"
-    r"\bcollections\b|\bresolution\b",
+    r"\bcollections\b|\bresolution\b|"
+    # Functions relevance.yaml's header already lists as NOT relevant
+    # (legal, marketing, product, design, HR) — the fallback shouldn't
+    # rescue them just because the company is a verified biotech.
+    r"\blegal\b|\bcounsel\b|\bparalegal\b|\bmarketing\b|\bproduct manager\b|"
+    r"\bproduct designer\b|\bdesigner\b|\bhr\b|\bhuman resources\b|\bpeople partner\b",
     re.IGNORECASE,
 )
 
