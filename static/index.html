@@ -311,6 +311,7 @@
     <option value="unknown">Not stated</option>
   </select>
   <select id="filter-source"><option value="all">All sources</option></select>
+  <label class="checkbox" title="Only jobs found on an employer's own careers board, not on Reed, Adzuna or LinkedIn (usually fewer applicants)"><input type="checkbox" id="filter-direct"> Direct only</label>
   <label class="checkbox"><input type="checkbox" id="filter-salary"> Salary listed</label>
   <label class="checkbox"><input type="checkbox" id="filter-hide-applied"> Hide applied</label>
 </div>
@@ -356,6 +357,7 @@ const state = {
     workMode: "all",
     source: "all",
     salaryOnly: false,
+    directOnly: false,        // true = hide anything also listed on a major job board
     hideApplied: false,
   },
   sort: { column: "posted_at", dir: "desc" },
@@ -539,6 +541,8 @@ function populateFilterOptions() {
    Filtering, sorting, pagination — all done client-side on the full
    /api/jobs payload, per the spec ("filtering happens in the browser").
    ========================================================================= */
+const DIRECT_SOURCES = new Set(["greenhouse", "lever", "ashby"]);
+
 function applyFiltersAndRender() {
   const f = state.filters;
   const searchLower = f.search.trim().toLowerCase();
@@ -549,6 +553,8 @@ function applyFiltersAndRender() {
     if (f.workMode !== "all" && job.work_mode !== f.workMode) return false;
     if (f.source !== "all" && !(job.sources || []).includes(f.source)) return false;
     if (f.salaryOnly && !(job.salary_min || job.salary_text)) return false;
+    // "Direct" = every source is an employer ATS board (no Reed/Adzuna/LinkedIn copy).
+    if (f.directOnly && !(job.sources || []).every((s) => DIRECT_SOURCES.has(s))) return false;
     if (f.hideApplied && appliedJobIds.has(job.id)) return false;
 
     if (f.datePosted !== "any") {
@@ -896,6 +902,11 @@ function initFilterControls() {
   });
   document.getElementById("filter-source").addEventListener("change", (e) => {
     state.filters.source = e.target.value;
+    state.page = 1;
+    applyFiltersAndRender();
+  });
+  document.getElementById("filter-direct").addEventListener("change", (e) => {
+    state.filters.directOnly = e.target.checked;
     state.page = 1;
     applyFiltersAndRender();
   });
