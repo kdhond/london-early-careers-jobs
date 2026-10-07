@@ -23,8 +23,6 @@
     --accent: #0d6b5f;
     --accent-soft: #dff1ed;
     --accent-text: #ffffff;
-    --success: #1a7f4b;
-    --danger: #c23636;
     --gold: #9a6700;
     --gold-soft: #fbf0d4;
     --new-bg: #e8eefc;
@@ -44,8 +42,6 @@
       --accent: #4fc3ad;
       --accent-soft: #163a33;
       --accent-text: #07201b;
-      --success: #4cbf7d;
-      --danger: #e0645f;
       --gold: #e0b24d;
       --gold-soft: #382e14;
       --new-bg: #1c2744;
@@ -87,27 +83,6 @@
     padding: 6px 14px; font-size: 13px; color: var(--text-muted); box-shadow: var(--shadow);
   }
   .stat strong { color: var(--text); font-weight: 600; }
-
-  /* ---------------- Local-app refresh controls ---------------- */
-  .header-actions { display: flex; gap: 8px; align-items: center; margin-top: 18px; }
-  #refresh-btn {
-    background: var(--accent); color: var(--accent-text); border: none; border-radius: 10px;
-    padding: 9px 20px; font-size: 14px; font-weight: 600;
-  }
-  #force-linkedin-btn {
-    background: none; border: 1px solid var(--border); color: var(--text-muted);
-    border-radius: 10px; padding: 9px 14px; font-size: 13px;
-  }
-  #refresh-btn:disabled, #force-linkedin-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-  #refresh-progress { display: none; margin-top: 12px; font-size: 12px; }
-  #refresh-progress.visible { display: block; }
-  .source-status-list { display: flex; gap: 8px; flex-wrap: wrap; }
-  .source-status { padding: 3px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); }
-  .source-status[data-status="done"] { color: var(--success); }
-  .source-status[data-status="running"] { color: var(--accent); }
-  .source-status[data-status="error"] { color: var(--danger); }
-  .source-status[data-status="skipped"] { color: var(--text-muted); }
-  #apify-status { margin-top: 8px; color: var(--text-muted); font-size: 12px; }
 
   /* ---------------- Search + filters ---------------- */
   .search-wrap { position: relative; }
@@ -270,7 +245,7 @@
 
 <header class="app-header">
   <div class="container">
-    <p class="eyebrow">Local app</p>
+    <p class="eyebrow">Updated daily</p>
     <h1>London Early-Careers Jobs</h1>
     <p class="tagline">Graduate and entry-level roles, with a spotlight on biotech, VC, health equity and finance.</p>
     <div class="stats-row">
@@ -278,12 +253,6 @@
       <span class="stat"><strong id="stat-total-active">0</strong> active jobs</span>
       <span class="stat">Last updated <strong id="stat-last-updated">never</strong></span>
     </div>
-    <div class="header-actions">
-      <button id="force-linkedin-btn" title="Ignore the cooldown (budget cap still applies)">Force LinkedIn refresh</button>
-      <button id="refresh-btn">Refresh</button>
-    </div>
-    <div id="refresh-progress"><div class="source-status-list" id="source-status-list"></div></div>
-    <div id="apify-status"></div>
   </div>
 </header>
 
@@ -354,7 +323,8 @@
    State
    ========================================================================= */
 const state = {
-  allJobs: [],               // raw jobs from /api/jobs
+  allJobs: [],               // raw jobs from data/jobs.json
+  generatedAt: null,         // when data/jobs.json was last built (see jobboard/export_static.py)
   categories: [],             // [{name, count}] computed from allJobs
   filters: {
     search: "",
@@ -372,7 +342,6 @@ const state = {
   page: 1,
   pageSize: 50,
   expandedJobId: null,
-  refreshPollTimer: null,
 };
 
 // The "Sort by" menu choices, mapped onto the column + direction used by the sorter below.
@@ -478,26 +447,37 @@ function escapeHtml(str) {
 }
 
 /* =========================================================================
-   Fetching data from the local Flask server
+   Loading data — a single static file, no live backend: everything loads
+   once and filters/sorts client-side.
    ========================================================================= */
-async function loadStats() {
-  const res = await fetch("/api/stats");
-  const stats = await res.json();
-  state.categories = stats.categories;
+async function loadData() {
+  const res = await fetch("data/jobs.json");
+  const payload = await res.json();
+  state.allJobs = payload.jobs;
+  state.generatedAt = payload.generated_at;
 
-  document.getElementById("stat-new-today").textContent = stats.new_today;
-  document.getElementById("stat-total-active").textContent = Number(stats.total_active).toLocaleString();
-  document.getElementById("stat-last-updated").textContent = relativeTime(stats.last_updated);
-
-  renderCategoryTabs();
-  renderApifyStatus(stats.apify);
-}
-
-async function loadJobs() {
-  const res = await fetch("/api/jobs");
-  state.allJobs = await res.json();
+  computeStats();
   populateFilterOptions();
   applyFiltersAndRender();
+}
+
+function computeStats() {
+  const todayUtc = new Date().toISOString().slice(0, 10);
+  const newToday = state.allJobs.filter((job) => (job.first_seen_at || "").slice(0, 10) === todayUtc).length;
+
+  const categoryCounts = {};
+  for (const job of state.allJobs) {
+    categoryCounts[job.category] = (categoryCounts[job.category] || 0) + 1;
+  }
+  state.categories = Object.entries(categoryCounts)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  document.getElementById("stat-new-today").textContent = newToday;
+  document.getElementById("stat-total-active").textContent = state.allJobs.length.toLocaleString();
+  document.getElementById("stat-last-updated").textContent = relativeTime(state.generatedAt);
+
+  renderCategoryTabs();
 }
 
 /* =========================================================================
@@ -819,85 +799,6 @@ function renderDetails(job) {
 }
 
 /* =========================================================================
-   Refresh button + progress polling
-   ========================================================================= */
-function renderApifyStatus(apify) {
-  const el = document.getElementById("apify-status");
-  if (!apify) { el.textContent = ""; return; }
-  const spend = `$${apify.spend_so_far_usd.toFixed(2)} of $${apify.monthly_budget_usd.toFixed(2)} used`;
-  const cooldown = apify.next_allowed_in_minutes > 0
-    ? `next LinkedIn refresh in ${Math.ceil(apify.next_allowed_in_minutes)}m`
-    : "LinkedIn refresh available now";
-  const lastRun = apify.last_run_at ? `last run ${relativeTime(apify.last_run_at)}` : "never run";
-  el.textContent = `LinkedIn (Apify): ${lastRun} · ${cooldown} · ${spend}`;
-}
-
-async function startRefresh(forceLinkedin) {
-  const refreshBtn = document.getElementById("refresh-btn");
-  const forceBtn = document.getElementById("force-linkedin-btn");
-  const progressPanel = document.getElementById("refresh-progress");
-
-  let res;
-  try {
-    res = await fetch("/api/refresh", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ force_linkedin: !!forceLinkedin }),
-    });
-  } catch (e) {
-    alert("Could not reach the server to start a refresh.");
-    return;
-  }
-
-  if (res.status === 409) {
-    return; // a refresh is already running — the poll loop below is already active
-  }
-  if (!res.ok) {
-    alert("Failed to start refresh.");
-    return;
-  }
-
-  refreshBtn.disabled = true;
-  forceBtn.disabled = true;
-  progressPanel.classList.add("visible");
-  pollRefreshStatus();
-}
-
-function pollRefreshStatus() {
-  if (state.refreshPollTimer) clearInterval(state.refreshPollTimer);
-
-  state.refreshPollTimer = setInterval(async () => {
-    const res = await fetch("/api/refresh/status");
-    const status = await res.json();
-    renderSourceStatusList(status.sources || {});
-
-    if (status.status === "done" || status.status === "error") {
-      clearInterval(state.refreshPollTimer);
-      state.refreshPollTimer = null;
-      document.getElementById("refresh-btn").disabled = false;
-      document.getElementById("force-linkedin-btn").disabled = false;
-      await loadStats();
-      await loadJobs();
-    }
-  }, 1000);
-}
-
-function renderSourceStatusList(sources) {
-  const list = document.getElementById("source-status-list");
-  list.innerHTML = "";
-  for (const [name, info] of Object.entries(sources)) {
-    const span = document.createElement("span");
-    span.className = "source-status";
-    span.dataset.status = info.status;
-    let label = `${name}: ${info.status}`;
-    if (info.status === "done") label += ` (${info.count})`;
-    if (info.message) label += ` — ${info.message}`;
-    span.textContent = label;
-    list.appendChild(span);
-  }
-}
-
-/* =========================================================================
    URL state (category chip, a "?c=" style deep link)
    ========================================================================= */
 function updateUrlFromState() {
@@ -913,7 +814,7 @@ function readStateFromUrl() {
   const c = params.get("c");
   if (c) {
     // The category slug is matched against the categories computed from
-    // the loaded jobs once loadJobs() has run — see init().
+    // the loaded jobs once loadData() has run — see init().
     state.pendingCategorySlug = c;
   }
 }
@@ -1008,9 +909,6 @@ function initFilterControls() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
-  document.getElementById("refresh-btn").addEventListener("click", () => startRefresh(false));
-  document.getElementById("force-linkedin-btn").addEventListener("click", () => startRefresh(true));
-
   // Clicking anywhere outside an open apply-links menu closes it.
   document.addEventListener("click", () => {
     document.querySelectorAll(".apply-menu-list.open").forEach((el) => el.classList.remove("open"));
@@ -1023,25 +921,13 @@ function initFilterControls() {
 async function init() {
   readStateFromUrl();
   initFilterControls();
-  await loadStats();
+  await loadData();
 
   if (state.pendingCategorySlug) {
     const match = state.categories.find((c) => slugify(c.name) === state.pendingCategorySlug);
     if (match) state.filters.category = match.name;
     renderCategoryTabs();
-  }
-
-  await loadJobs();
-
-  // If a refresh was already running when the page loaded (e.g. the user
-  // reloaded the browser mid-refresh), pick the polling back up.
-  const statusRes = await fetch("/api/refresh/status");
-  const status = await statusRes.json();
-  if (status.status === "running") {
-    document.getElementById("refresh-btn").disabled = true;
-    document.getElementById("force-linkedin-btn").disabled = true;
-    document.getElementById("refresh-progress").classList.add("visible");
-    pollRefreshStatus();
+    applyFiltersAndRender();
   }
 }
 
