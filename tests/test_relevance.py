@@ -41,7 +41,9 @@ TITLE_TO_EXPECTED_RELEVANCE = [
     ("Life Sciences Graduate Programme", True),
     ("Regulatory Affairs Associate", True),
     ("Pharmacovigilance Officer", True),
-    ("Graduate Pharmacist", True),
+    # Patient-care titles are excluded outright (see TestNotRelevantRoles) —
+    # reversed 2026-10-07, previously expected True.
+    ("Graduate Pharmacist", False),
     # Biology-specific titles — added 2026-09-30, "more emphasis on biology
     # and life sciences roles that could use some AI but aren't AI primarily."
     ("Biologist", True),
@@ -229,7 +231,9 @@ class TestEngineeringRolesExcludedFromHintFallback:
     def test_non_engineering_role_at_same_company_is_still_relevant(self, checker, make_job):
         # Sanity check: the exclusion is specific to engineering titles, not
         # a general regression of the hint fallback.
-        job = make_job(title="Office Manager", category_hint="biotech-ai")
+        # (Uses "Strategy Associate", not "Office Manager": office/admin titles
+        # are deliberately excluded from the fallback since 2026-10-07.)
+        job = make_job(title="Strategy Associate", category_hint="biotech-ai")
         assert checker.is_relevant(job) is True
 
     def test_data_engineer_at_biotech_ai_company_is_not_relevant(self, checker, make_job):
@@ -261,3 +265,44 @@ class TestGenericFinanceTitleStillCaughtByHintFallback:
     def test_venture_associate_with_no_hint_is_not_relevant(self, checker, make_job):
         job = make_job(title="Venture Associate", category_hint=None)
         assert checker.is_relevant(job) is False
+
+
+class TestNotRelevantRoles:
+    """Clinical-care and sales titles are never relevant, even if a health keyword matches."""
+
+    def test_excluded_even_with_matching_keyword(self, make_job):
+        checker = RelevanceChecker(rules=[{"name": "Relevant", "keywords": ["clinical", "oncology", "diabetes"]}])
+        for title in ["Clinical Pharmacist", "Diabetes Specialist Nurse", "Sales Specialist Oncology (Skin)", "Pharmacy Business Manager"]:
+            assert not checker.is_relevant(make_job(title=title)), title
+
+    def test_excluded_at_hinted_company(self, make_job):
+        checker = RelevanceChecker(rules=[{"name": "Relevant", "keywords": ["clinical"]}])
+        assert not checker.is_relevant(make_job(title="Enterprise Sales Lead", category_hint="biotech-ai"))
+
+    def test_medical_science_liaison_still_relevant(self, make_job):
+        checker = RelevanceChecker(rules=[{"name": "Relevant", "keywords": ["medical science liaison"]}])
+        assert checker.is_relevant(make_job(title="Medical Science Liaison - Neuroscience"))
+
+
+class TestHintFallbackIsSelective:
+    """The 'any job at a verified biotech company' fallback skips support/admin roles but not real ones."""
+
+    RULES = [{"name": "Relevant", "keywords": ["bioinformatics", "medical science liaison"]}]
+
+    def test_support_roles_not_rescued(self, make_job):
+        checker = RelevanceChecker(rules=self.RULES)
+        for title in ["Revenue Cycle Trainer", "Care Coach", "Patient Coordinator", "Billing Specialist Associate",
+                      "Member Care Advocate", "Software Engineering Intern", "Workday Systems Analyst – Finance",
+                      "Candidate Experience Coordinator"]:
+            assert not checker.is_relevant(make_job(title=title, category_hint="biotech-ai")), title
+
+    def test_real_roles_still_rescued(self, make_job):
+        checker = RelevanceChecker(rules=self.RULES)
+        for title in ["Laboratory Operations Specialist", "Alliance Management Co-op", "Quality Control Co-op",
+                      "Strategy Associate", "Finance Associate"]:
+            assert checker.is_relevant(make_job(title=title, category_hint="biotech-ai")), title
+
+    def test_keyword_match_beats_support_pattern(self, make_job):
+        # A title with a real keyword is deliberate and is never demoted by the support list.
+        checker = RelevanceChecker(rules=self.RULES)
+        assert checker.is_relevant(make_job(title="Bioinformatics Coordinator"))

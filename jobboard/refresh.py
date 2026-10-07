@@ -46,6 +46,13 @@ from jobboard.sources.ashby import AshbySource
 from jobboard.sources.base import PROJECT_ROOT, load_yaml
 from jobboard.sources.greenhouse import GreenhouseSource
 from jobboard.sources.lever import LeverSource
+from jobboard.sources.workday import WorkdaySource
+from jobboard.sources.more_ats import (
+    PersonioSource,
+    RecruiteeSource,
+    SmartRecruitersSource,
+    WorkableSource,
+)
 from jobboard.sources.linkedin_apify import LinkedInApifySource
 from jobboard.sources.reed import ReedSource
 
@@ -120,6 +127,11 @@ def run_refresh(
         "greenhouse": GreenhouseSource(),
         "lever": LeverSource(),
         "ashby": AshbySource(),
+        "workable": WorkableSource(),
+        "recruitee": RecruiteeSource(),
+        "smartrecruiters": SmartRecruitersSource(),
+        "personio": PersonioSource(),
+        "workday": WorkdaySource(),
         "reed": ReedSource(conn=conn),
         "adzuna": AdzunaSource(),
     }

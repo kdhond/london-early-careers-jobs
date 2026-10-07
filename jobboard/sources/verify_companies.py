@@ -62,6 +62,41 @@ def check_one(company: dict) -> tuple[str, bool, str]:
                     return (name, n > 0, f"{n} jobs")
                 return (name, False, f"HTTP {resp.status_code}")
 
+            # The four extra ATS platforms (see more_ats.py): each has one
+            # list URL, and "ok" means it answered 200 with at least one job.
+            more = {
+                "workable": (f"https://apply.workable.com/api/v1/widget/accounts/{token}",
+                             lambda d: len(d.get("jobs", []))),
+                "recruitee": (f"https://{token}.recruitee.com/api/offers/",
+                              lambda d: len(d.get("offers", []))),
+                "smartrecruiters": (f"https://api.smartrecruiters.com/v1/companies/{token}/postings?limit=1",
+                                    lambda d: d.get("totalFound", 0)),
+            }
+            if ats in more:
+                url, count = more[ats]
+                resp = client.get(url)
+                if resp.status_code == 200:
+                    n = count(resp.json())
+                    return (name, n > 0, f"{n} jobs")
+                return (name, False, f"HTTP {resp.status_code}")
+
+            if ats == "workday":
+                resp = client.post(
+                    f"https://{token}.{company['wd']}.myworkdayjobs.com/wday/cxs/{token}/{company['site']}/jobs",
+                    json={"appliedFacets": {}, "limit": 1, "offset": 0, "searchText": company.get("search", "London")},
+                )
+                if resp.status_code == 200:
+                    n = resp.json().get("total", 0)
+                    return (name, n > 0, f"{n} London-matching jobs")
+                return (name, False, f"HTTP {resp.status_code}")
+
+            if ats == "personio":
+                resp = client.get(f"https://{token}.jobs.personio.de/xml")
+                if resp.status_code == 200:
+                    n = resp.text.count("<position>")
+                    return (name, n > 0, f"{n} jobs")
+                return (name, False, f"HTTP {resp.status_code}")
+
             return (name, False, f"unknown ats '{ats}'")
     except Exception as exc:
         return (name, False, f"error: {exc}")

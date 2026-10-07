@@ -45,7 +45,44 @@ _ENGINEERING_ROLE_RE = re.compile(
     r"\bqa engineer\b|\btest engineer\b|\bhardware engineer\b|"
     r"\bdata engineer\b|\bml engineer\b|\bmachine learning engineer\b|"
     r"\bai engineer\b|\bresearch engineer\b|\bnlp engineer\b|"
-    r"\bcomputer vision engineer\b",
+    r"\bcomputer vision engineer\b|\bsoftware engineering\b|\bnetwork engineer\b|"
+    r"\bcloud engineer\b|\bsystems analyst\b|\bit business systems\b|\bit support\b",
+    re.IGNORECASE,
+)
+
+# Support / admin / customer-facing-operations titles. These only matter for
+# the company-level fallback below ("any job at a verified biotech company is
+# relevant"): that fallback is right for science, strategy, finance and
+# leadership roles, but wrong for the billing, training, patient-support and
+# recruiting jobs a health company also has. Added 2026-10-07 after the
+# direct-only view (jobs not on Reed/LinkedIn, which is mostly verified-
+# company jobs) showed Natera "Revenue Cycle Trainer", Maven "Care Coach"
+# and Included Health "Member Care Advocate" starred. A title that matches
+# a real keyword in relevance.yaml is NOT affected — only the fallback is.
+_LOW_FIT_SUPPORT_ROLE_RE = re.compile(
+    r"\bbilling\b|\brevenue cycle\b|\btrainer\b|\bcoordinator\b|"
+    r"\bcare coach\b|\bcare advocate\b|\badvocacy\b|\bpatient coordinator\b|"
+    r"\bcustomer (?:support|success|service|experience)\b|\bsupport specialist\b|"
+    r"\bsupport operations\b|\bcandidate experience\b|\brecruiter\b|\btalent acquisition\b|"
+    r"\bpayroll\b|\baccounts (?:payable|receivable)\b|\badministrator\b|\breceptionist\b|"
+    r"\boffice manager\b|\bfacilities\b|\bexecutive assistant\b|\bdata reviewer\b|"
+    r"\bcollections\b|\bresolution\b",
+    re.IGNORECASE,
+)
+
+# Never relevant, whatever else the title says — and unlike the engineering
+# list above, this one overrides keyword matches too, not just the
+# company-hint fallback. Added 2026-10-07 after Workday pharma/CRO jobs
+# surfaced "Clinical Pharmacist", "Diabetes Specialist Nurse" and "Sales
+# Specialist Oncology" as Relevant: they contain health words ("clinical",
+# "diabetes", "oncology") that the keyword list matches, but they're
+# patient-care and field-sales jobs, not the research, strategy, finance or
+# equity roles this board is for. Medical Science Liaison and similar
+# stay relevant — none of these patterns match them.
+_NOT_RELEVANT_ROLE_RE = re.compile(
+    r"\bnurse\b|\bnurses\b|\bnursing\b|\bpharmacist\b|\bpharmacy\b|"
+    r"\bhealthcare assistant\b|\bcare assistant\b|\bsupport worker\b|\bcarer\b|"
+    r"\bdentist\b|\bdental\b|\bphysiotherapist\b|\bsales\b",
     re.IGNORECASE,
 )
 
@@ -85,6 +122,9 @@ class RelevanceChecker:
         self._pattern = _build_keyword_pattern(keywords)
 
     def is_relevant(self, job: Job) -> bool:
+        if _NOT_RELEVANT_ROLE_RE.search(job.title or ""):
+            return False
+
         is_hinted_company = (job.category_hint or "") in _HINTED_COMPANY_SECTORS
         is_engineering_role = bool(_ENGINEERING_ROLE_RE.search(job.title or ""))
 
@@ -98,7 +138,11 @@ class RelevanceChecker:
         # No keyword matched, but we still know — as verified fact, not
         # text-matching guesswork — which sector this company is in. Still
         # excludes engineering roles, per the rule above.
-        if is_hinted_company and not is_engineering_role:
+        if (
+            is_hinted_company
+            and not is_engineering_role
+            and not _LOW_FIT_SUPPORT_ROLE_RE.search(job.title or "")
+        ):
             return True
 
         return False

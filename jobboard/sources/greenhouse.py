@@ -71,7 +71,10 @@ class GreenhouseSource(Source):
 
     def _to_job(self, raw: dict, company: dict) -> Job:
         location = (raw.get("location") or {}).get("name", "")
-        description_html = raw.get("content", "") or ""
+        # Greenhouse returns `content` HTML-escaped ("&lt;p&gt;..."), so unescape
+        # it once to get real HTML. Without this the page shows literal
+        # "<p>" tags as text. It's still sanitised (bleach) before display.
+        description_html = html.unescape(raw.get("content", "") or "")
         description_text = _html_to_text(description_html)
 
         return Job.new(

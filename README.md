@@ -171,7 +171,7 @@ Company career pages live in `config/companies.yaml`. Each entry:
 
 ```yaml
 - name: Monzo
-  ats: greenhouse          # greenhouse | lever | ashby
+  ats: greenhouse          # greenhouse | lever | ashby | workable | recruitee | smartrecruiters | personio
   token: monzo             # the board's slug — check the URL on their careers page
   website: https://monzo.com
   category_hint: fintech    # optional, not currently used by categorise.py
@@ -297,6 +297,7 @@ jobboard/
   sources/
     base.py                      Shared Source interface, HTTP retry helper, YAML loader
     greenhouse.py, lever.py, ashby.py    Company career-page sources
+    more_ats.py                          Workable/Recruitee/SmartRecruiters/Personio
     verify_companies.py                    Health-check for config/companies.yaml
     reed.py, adzuna.py, linkedin_apify.py  The three paid/keyed sources
 config/
