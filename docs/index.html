@@ -114,6 +114,19 @@
   .filters-bar input[type="text"] { min-width: 220px; flex: 1; }
   .filters-bar label.checkbox { display: flex; align-items: center; gap: 5px; font-size: 14px; color: var(--text-muted); white-space: nowrap; }
   #filter-relevant-label { color: var(--accent); font-weight: 600; }
+  /* One-click preset: ★ picks + Direct only (relevant jobs not on the big job boards). */
+  .btn-gems {
+    font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    padding: 6px 12px; border-radius: 6px;
+    color: var(--accent); background: transparent; border: 1px solid var(--accent);
+  }
+  .btn-gems.active { color: var(--accent-text); background: var(--accent); }
+  /* Marks jobs found only on an employer's own careers page (less competition). */
+  .badge-direct {
+    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px;
+    font-size: 11px; font-weight: 600; color: var(--accent); border: 1px solid var(--accent);
+    vertical-align: middle; white-space: nowrap;
+  }
 
   /* ---------------- Job table ---------------- */
   table { width: 100%; border-collapse: collapse; background: var(--surface); }
@@ -269,6 +282,7 @@
     <option value="unknown">Not stated</option>
   </select>
   <select id="filter-source"><option value="all">All sources</option></select>
+  <button type="button" id="preset-gems" class="btn-gems" title="Relevant jobs that are only on the employer's own careers page, not on Reed, Adzuna or LinkedIn: usually far fewer applicants">&#128142; Hidden gems</button>
   <label class="checkbox" title="Only jobs found on an employer's own careers board, not on Reed, Adzuna or LinkedIn (usually fewer applicants)"><input type="checkbox" id="filter-direct"> Direct only</label>
   <label class="checkbox"><input type="checkbox" id="filter-salary"> Salary listed</label>
   <label class="checkbox"><input type="checkbox" id="filter-hide-applied"> Hide applied</label>
@@ -406,7 +420,7 @@ function companyDomainText(url) {
 // Which apply link to use as the main "Apply" button target: prefer the
 // company's own site / ATS page over LinkedIn, then Reed/Indeed, then Adzuna —
 // matching the source priority already used server-side for de-duping.
-const APPLY_SOURCE_PRIORITY = { greenhouse: 0, lever: 0, ashby: 0, employer: 0, linkedin: 1, reed: 2, adzuna: 3 };
+const APPLY_SOURCE_PRIORITY = { greenhouse: 0, lever: 0, ashby: 0, workable: 0, recruitee: 0, smartrecruiters: 0, personio: 0, workday: 0, employer: 0, linkedin: 1, reed: 2, adzuna: 3 };
 function bestApplyLink(job) {
   if (!job.apply_links || job.apply_links.length === 0) return null;
   return job.apply_links.slice().sort((a, b) => {
@@ -526,7 +540,12 @@ function populateFilterOptions() {
    Filtering, sorting, pagination — all done client-side on the full jobs
    array, exactly as before (this never depended on a live server).
    ========================================================================= */
-const DIRECT_SOURCES = new Set(["greenhouse", "lever", "ashby"]);
+const DIRECT_SOURCES = new Set(["greenhouse", "lever", "ashby", "workable", "recruitee", "smartrecruiters", "personio", "workday"]);
+
+function isDirect(job) {
+  // "Direct" = every source is an employer ATS board (no Reed/Adzuna/LinkedIn copy).
+  return (job.sources || []).length > 0 && (job.sources || []).every((s) => DIRECT_SOURCES.has(s));
+}
 
 function applyFiltersAndRender() {
   const f = state.filters;
@@ -539,7 +558,7 @@ function applyFiltersAndRender() {
     if (f.source !== "all" && !(job.sources || []).includes(f.source)) return false;
     if (f.salaryOnly && !(job.salary_min || job.salary_text)) return false;
     // "Direct" = every source is an employer ATS board (no Reed/Adzuna/LinkedIn copy).
-    if (f.directOnly && !(job.sources || []).every((s) => DIRECT_SOURCES.has(s))) return false;
+    if (f.directOnly && !isDirect(job)) return false;
     if (f.hideApplied && appliedJobIds.has(job.id)) return false;
     if (f.relevantOnly && !job.is_relevant) return false;
 
@@ -675,6 +694,7 @@ function renderJobRow(job) {
     <td>
       <span class="job-title">${relevantStar}${escapeHtml(job.title)}</span>
       ${isNew(job) ? '<span class="badge-new">NEW</span>' : ""}
+      ${isDirect(job) ? '<span class="badge-direct" title="Only listed on the employer\'s own careers page, not on Reed, Adzuna or LinkedIn">DIRECT</span>' : ""}
     </td>
     <td><span class="category-tag">${escapeHtml(job.category)}</span></td>
     <td>${escapeHtml(job.city || job.location || "—")}${job.work_mode !== "unknown" ? " · " + escapeHtml(job.work_mode) : ""}</td>
@@ -821,6 +841,7 @@ function initFilterControls() {
   document.getElementById("filter-direct").addEventListener("change", (e) => {
     state.filters.directOnly = e.target.checked;
     state.page = 1;
+    syncGemsButton();
     applyFiltersAndRender();
   });
   document.getElementById("filter-salary").addEventListener("change", (e) => {
@@ -831,6 +852,23 @@ function initFilterControls() {
   document.getElementById("filter-relevant").addEventListener("change", (e) => {
     state.filters.relevantOnly = e.target.checked;
     state.page = 1;
+    syncGemsButton();
+    applyFiltersAndRender();
+  });
+
+  // "Hidden gems" preset: ticks ★ picks + Direct only together; click again to clear both.
+  const gemsButton = document.getElementById("preset-gems");
+  const relevantBox = document.getElementById("filter-relevant");
+  const directBox = document.getElementById("filter-direct");
+  function syncGemsButton() {
+    gemsButton.classList.toggle("active", state.filters.relevantOnly && state.filters.directOnly);
+  }
+  gemsButton.addEventListener("click", () => {
+    const turnOn = !(state.filters.relevantOnly && state.filters.directOnly);
+    state.filters.relevantOnly = state.filters.directOnly = turnOn;
+    relevantBox.checked = directBox.checked = turnOn;
+    state.page = 1;
+    syncGemsButton();
     applyFiltersAndRender();
   });
 
