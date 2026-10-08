@@ -44,6 +44,8 @@ _SOURCE_PRIORITY = {
     "smartrecruiters": 0,
     "personio": 0,
     "workday": 0,
+    "bamboohr": 0,
+    "teamtailor": 0,
     "linkedin": 1,
     "reed": 2,
     "adzuna": 3,

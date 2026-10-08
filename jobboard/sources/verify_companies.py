@@ -80,6 +80,20 @@ def check_one(company: dict) -> tuple[str, bool, str]:
                     return (name, n > 0, f"{n} jobs")
                 return (name, False, f"HTTP {resp.status_code}")
 
+            if ats == "bamboohr":
+                resp = client.get(f"https://{token}.bamboohr.com/careers/list")
+                if resp.status_code == 200:
+                    n = len(resp.json().get("result", []))
+                    return (name, n > 0, f"{n} jobs")
+                return (name, False, f"HTTP {resp.status_code}")
+
+            if ats == "teamtailor":
+                resp = client.get(f"https://{token}.teamtailor.com/jobs.rss")
+                if resp.status_code == 200:
+                    n = resp.text.count("<item>")
+                    return (name, n > 0, f"{n} jobs")
+                return (name, False, f"HTTP {resp.status_code}")
+
             if ats == "workday":
                 resp = client.post(
                     f"https://{token}.{company['wd']}.myworkdayjobs.com/wday/cxs/{token}/{company['site']}/jobs",

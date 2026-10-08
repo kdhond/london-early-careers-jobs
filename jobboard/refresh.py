@@ -48,9 +48,11 @@ from jobboard.sources.greenhouse import GreenhouseSource
 from jobboard.sources.lever import LeverSource
 from jobboard.sources.workday import WorkdaySource
 from jobboard.sources.more_ats import (
+    BambooHRSource,
     PersonioSource,
     RecruiteeSource,
     SmartRecruitersSource,
+    TeamtailorSource,
     WorkableSource,
 )
 from jobboard.sources.linkedin_apify import LinkedInApifySource
@@ -132,6 +134,8 @@ def run_refresh(
         "smartrecruiters": SmartRecruitersSource(),
         "personio": PersonioSource(),
         "workday": WorkdaySource(),
+        "bamboohr": BambooHRSource(),
+        "teamtailor": TeamtailorSource(),
         "reed": ReedSource(conn=conn),
         "adzuna": AdzunaSource(),
     }

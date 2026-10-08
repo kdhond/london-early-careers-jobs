@@ -1364,3 +1364,137 @@
   token: inizio
   website: https://www.inizio.health
   category_hint: medcomms
+- name: Autolus
+  ats: workday
+  token: autolus
+  wd: wd103
+  site: External
+  website: https://www.autolus.com
+  category_hint: biotech-ai
+- name: Evotec
+  ats: workday
+  token: evotecgroup
+  wd: wd3
+  site: Evotec_Career_Site
+  search: United Kingdom
+  website: https://www.evotec.com
+  category_hint: pharma
+- name: Abbott
+  ats: workday
+  token: abbott
+  wd: wd5
+  site: abbottcareers
+  search: United Kingdom
+  website: https://www.abbott.com
+  category_hint: medtech
+- name: AviadoBio
+  ats: workable
+  token: aviadobio
+  website: https://www.aviadobio.com
+  category_hint: biotech-ai
+- name: Qureight
+  ats: workable
+  token: qureight
+  website: https://www.qureight.com
+  category_hint: biotech-ai
+- name: Novo Holdings
+  ats: workable
+  token: novoholdings
+  website: https://www.novoholdings.dk
+  category_hint: venture-capital
+- name: Cyted
+  ats: personio
+  token: cyted
+  website: https://www.cyted.ai
+  category_hint: biotech-ai
+- name: Engitix
+  ats: personio
+  token: engitix-limited
+  website: https://www.engitix.com
+  category_hint: biotech-ai
+- name: Arctoris
+  ats: personio
+  token: arctorians
+  website: https://www.arctoris.com
+  category_hint: biotech-ai
+- name: Enara Bio
+  ats: teamtailor
+  token: enarabio
+  country: United Kingdom
+  website: https://www.enarabio.com
+  category_hint: biotech-ai
+- name: Grey Wolf Therapeutics
+  ats: bamboohr
+  token: gwt
+  country: United Kingdom
+  website: https://www.greywolftherapeutics.com
+  category_hint: biotech-ai
+- name: Maxion Therapeutics
+  ats: bamboohr
+  token: maxion
+  country: United Kingdom
+  website: https://www.maxiontx.com
+  category_hint: biotech-ai
+- name: Ensocell Therapeutics
+  ats: bamboohr
+  token: ensocell
+  country: United Kingdom
+  website: https://www.ensocell.com
+  category_hint: biotech-ai
+- name: Constructive Bio
+  ats: bamboohr
+  token: constructivebio
+  country: United Kingdom
+  website: https://constructive.bio
+  category_hint: biotech-ai
+- name: Panmure Liberum
+  ats: bamboohr
+  token: panmure
+  country: United Kingdom
+  website: https://www.panmureliberum.com
+  category_hint: finance
+- name: Apax Partners
+  ats: lever
+  token: apax
+  website: https://www.apax.com
+  category_hint: finance
+- name: Numan
+  ats: lever
+  token: numan
+  website: https://www.numan.com
+  category_hint: healthtech
+- name: Ada Health
+  ats: greenhouse
+  token: adahealth
+  website: https://ada.com
+  category_hint: healthtech
+- name: Hinge Health
+  ats: ashby
+  token: hinge-health
+  website: https://www.hingehealth.com
+  category_hint: healthtech
+- name: Relation Therapeutics
+  ats: ashby
+  token: relationrx
+  website: https://relationrx.com
+  category_hint: biotech-ai
+- name: General Atlantic
+  ats: greenhouse
+  token: generalatlantic
+  website: https://www.generalatlantic.com
+  category_hint: finance
+- name: AlixPartners
+  ats: greenhouse
+  token: alixpartners
+  website: https://www.alixpartners.com
+  category_hint: consulting
+- name: William Blair
+  ats: greenhouse
+  token: williamblair
+  website: https://www.williamblair.com
+  category_hint: finance
+- name: Eurofins
+  ats: smartrecruiters
+  token: eurofins
+  website: https://www.eurofins.com
+  category_hint: life-sciences-tools

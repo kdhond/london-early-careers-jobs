@@ -461,7 +461,7 @@ function companyDomainText(url) {
 // Which apply link to use as the main "Apply" button target: prefer the
 // company's own site / ATS page over LinkedIn, then Reed/Indeed, then Adzuna —
 // matching the source priority already used server-side for de-duping.
-const APPLY_SOURCE_PRIORITY = { greenhouse: 0, lever: 0, ashby: 0, workable: 0, recruitee: 0, smartrecruiters: 0, personio: 0, workday: 0, employer: 0, linkedin: 1, reed: 2, adzuna: 3 };
+const APPLY_SOURCE_PRIORITY = { greenhouse: 0, lever: 0, ashby: 0, workable: 0, recruitee: 0, smartrecruiters: 0, personio: 0, workday: 0, bamboohr: 0, teamtailor: 0, employer: 0, linkedin: 1, reed: 2, adzuna: 3 };
 function bestApplyLink(job) {
   if (!job.apply_links || job.apply_links.length === 0) return null;
   return job.apply_links.slice().sort((a, b) => {
@@ -566,7 +566,7 @@ function populateFilterOptions() {
 /* =========================================================================
    Filtering, sorting, pagination — all done client-side on the full jobs array.
    ========================================================================= */
-const DIRECT_SOURCES = new Set(["greenhouse", "lever", "ashby", "workable", "recruitee", "smartrecruiters", "personio", "workday"]);
+const DIRECT_SOURCES = new Set(["greenhouse", "lever", "ashby", "workable", "recruitee", "smartrecruiters", "personio", "workday", "bamboohr", "teamtailor"]);
 
 function isDirect(job) {
   // "Direct" = every source is an employer ATS board (no Reed/Adzuna/LinkedIn copy).

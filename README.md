@@ -171,7 +171,7 @@ Company career pages live in `config/companies.yaml`. Each entry:
 
 ```yaml
 - name: Monzo
-  ats: greenhouse          # greenhouse | lever | ashby | workable | recruitee | smartrecruiters | personio
+  ats: greenhouse          # greenhouse | lever | ashby | workable | recruitee | smartrecruiters | personio | workday | bamboohr | teamtailor
   token: monzo             # the board's slug — check the URL on their careers page
   website: https://monzo.com
   category_hint: fintech    # optional, not currently used by categorise.py

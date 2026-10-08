@@ -104,3 +104,34 @@ def test_workday_pages_to_total_and_uses_detail_location(monkeypatch):
     assert "London" in jobs[0].location             # additional office kept so it passes the location filter
     assert jobs[0].posted_at == "2026-10-05"
     assert jobs[0].sources == ["workday"]
+
+
+def test_bamboohr_fetches_detail_and_appends_country(monkeypatch):
+    _fake_requests(monkeypatch, {
+        "careers/47/detail": {"result": {"jobOpening": {
+            "jobOpeningName": "Computational Scientist", "employmentStatusLabel": "Full-Time",
+            "location": {"city": "Abingdon", "state": "Oxfordshire"}, "atsLocation": {"country": None},
+            "description": "<p>Cells</p>", "datePosted": "2026-08-04",
+            "jobOpeningShareUrl": "https://acme.bamboohr.com/careers/47"}}},
+        "careers/list": {"result": [{"id": "47", "jobOpeningName": "Computational Scientist"}]},
+    })
+    source = more_ats.BambooHRSource()
+    source.companies = [{**COMPANY, "country": "United Kingdom"}]
+    [job] = source.fetch()
+    # "Abingdon, Oxfordshire" alone wouldn't pass the England filter; the configured country makes it explicit.
+    assert job.location == "Abingdon, Oxfordshire, United Kingdom"
+    assert job.posted_at == "2026-08-04" and "Cells" in job.description_text
+
+
+def test_teamtailor_rss(monkeypatch):
+    rss = b"""<?xml version="1.0"?><rss xmlns:tt="https://teamtailor.com/locations"><channel><item>
+      <title>Clinical Project Manager</title><description>&lt;p&gt;Immunotherapy&lt;/p&gt;</description>
+      <pubDate>Thu, 01 Oct 2026 13:10:26 +0100</pubDate><link>https://careers.acme.bio/jobs/1</link>
+      <remoteStatus>hybrid</remoteStatus><tt:locations></tt:locations></item></channel></rss>"""
+    _fake_requests(monkeypatch, {"teamtailor.com/jobs.rss": rss})
+    source = more_ats.TeamtailorSource()
+    source.companies = [{**COMPANY, "country": "United Kingdom"}]
+    [job] = source.fetch()
+    assert job.location == "United Kingdom"        # feed had no location, so the configured country is used
+    assert job.posted_at == "2026-10-01" and job.work_mode == "hybrid"
+    assert "Immunotherapy" in job.description_text and "<" not in job.description_text

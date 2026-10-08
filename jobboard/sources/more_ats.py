@@ -212,3 +212,90 @@ class PersonioSource(_CompanyATSSource):
                 apply_links=[ApplyLink(source=self.name, url=f"https://{slug}.jobs.personio.de/job/{text('id')}")],
             ))
         return out
+
+
+def _with_country(company: dict, location: str) -> str:
+    """
+    Append the company's configured `country` (e.g. "United Kingdom") to a
+    location. Small boards often list just "Abingdon, Oxfordshire" or nothing
+    at all, which the England filter can't recognise on its own; the country
+    is a verified fact we set per company in companies.yaml.
+    """
+    country = company.get("country")
+    if country and country.lower() not in location.lower():
+        return _join_location(location, country)
+    return location
+
+
+class BambooHRSource(_CompanyATSSource):
+    name = "bamboohr"
+
+    def _fetch_company(self, client, company):
+        base = f"https://{company['token']}.bamboohr.com/careers"
+        resp = request_with_retry(client, "GET", f"{base}/list")
+        if resp.status_code != 200:
+            return []
+        out = []
+        for item in resp.json().get("result", []):
+            # The list view has no description, so fetch each opening's detail.
+            detail_resp = request_with_retry(client, "GET", f"{base}/{item['id']}/detail")
+            if detail_resp.status_code != 200:
+                continue
+            opening = detail_resp.json().get("result", {}).get("jobOpening", {})
+            loc = opening.get("location") or item.get("location") or {}
+            ats_loc = opening.get("atsLocation") or {}
+            location = _join_location(loc.get("city"), loc.get("state"), ats_loc.get("country"))
+            description_html = opening.get("description", "") or ""
+            out.append(self._job(
+                company,
+                title=opening.get("jobOpeningName") or item.get("jobOpeningName", ""),
+                location=_with_country(company, location),
+                employment_type=opening.get("employmentStatusLabel"),
+                posted_at=_date_prefix(opening.get("datePosted")),
+                description_html=description_html,
+                description_text=_html_to_text(description_html),
+                apply_links=[ApplyLink(source=self.name, url=opening.get("jobOpeningShareUrl") or f"{base}/{item['id']}")],
+            ))
+        return out
+
+
+class TeamtailorSource(_CompanyATSSource):
+    name = "teamtailor"
+
+    def _fetch_company(self, client, company):
+        # Teamtailor publishes each company's openings as an RSS feed.
+        resp = request_with_retry(client, "GET", f"https://{company['token']}.teamtailor.com/jobs.rss")
+        if resp.status_code != 200:
+            return []
+        out = []
+        for item in ET.fromstring(resp.content).iter("item"):
+            def text(tag: str) -> str:
+                return (item.findtext(tag) or "").strip()
+
+            # <tt:locations> holds zero or more location blocks; join all of their text.
+            locations = [
+                t.strip()
+                for loc in item.iter("{https://teamtailor.com/locations}location")
+                for t in loc.itertext() if t.strip()
+            ]
+            description_html = html.unescape(text("description"))
+            out.append(self._job(
+                company,
+                title=text("title"),
+                location=_with_country(company, ", ".join(locations)),
+                work_mode=text("remoteStatus") if text("remoteStatus") in ("remote", "hybrid", "onsite") else "unknown",
+                posted_at=_rfc822_date(text("pubDate")),
+                description_html=description_html,
+                description_text=_html_to_text(description_html),
+                apply_links=[ApplyLink(source=self.name, url=text("link"))],
+            ))
+        return out
+
+
+def _rfc822_date(value: str) -> str | None:
+    """'Thu, 01 Oct 2026 13:10:26 +0100' -> '2026-10-01' (None if unparseable)."""
+    from email.utils import parsedate_to_datetime
+    try:
+        return parsedate_to_datetime(value).date().isoformat()
+    except (TypeError, ValueError):
+        return None
