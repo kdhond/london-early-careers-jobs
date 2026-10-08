@@ -1498,3 +1498,9 @@
   token: eurofins
   website: https://www.eurofins.com
   category_hint: life-sciences-tools
+- name: Transition Bio
+  ats: bamboohr
+  token: transitionbio
+  country: United Kingdom
+  website: https://transitionbio.com
+  category_hint: biotech-ai
