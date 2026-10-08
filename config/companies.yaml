@@ -1635,3 +1635,40 @@
   country: United Kingdom
   website: https://flyttr.com
   category_hint: biotech-ai
+- name: Basecamp Research
+  ats: ashby
+  token: basecamp-research
+  website: https://www.basecamp-research.com
+  category_hint: biotech-ai
+- name: Extracellular
+  ats: bamboohr
+  token: extracellular
+  country: United Kingdom
+  website: https://extracellular.com
+  category_hint: biotech-ai
+- name: Ground Truth Labs
+  ats: ashby
+  token: groundtruthlabs
+  website: https://groundtruthlabs.com
+  category_hint: biotech-ai
+- name: Hoxton Farms
+  ats: ashby
+  token: hoxtonfarms
+  website: https://hoxtonfarms.com
+  category_hint: biotech-ai
+- name: Ignota Labs
+  ats: workable
+  token: ignota-labs
+  website: https://www.ignotalabs.ai
+  category_hint: biotech-ai
+- name: Linical
+  ats: teamtailor
+  token: linical
+  country: United Kingdom
+  website: https://www.linical.com
+  category_hint: cro
+- name: Phase Biolabs
+  ats: ashby
+  token: phasebiolabs
+  website: https://phasebiolabs.com
+  category_hint: biotech-ai
