@@ -1504,3 +1504,134 @@
   country: United Kingdom
   website: https://transitionbio.com
   category_hint: biotech-ai
+- name: Biomapas
+  ats: workable
+  token: biomapas
+  website: https://www.biomapas.com
+  category_hint: cro
+- name: Insmed
+  ats: workday
+  token: insmed
+  wd: wd504
+  site: EXTERNAL
+  search: United Kingdom
+  website: https://insmed.com
+  category_hint: pharma
+- name: Pierre Fabre
+  ats: workday
+  token: pierrefabre
+  wd: wd3
+  site: External_Career_Site
+  search: United Kingdom
+  website: https://www.pierre-fabre.com
+  category_hint: pharma
+- name: Replimune
+  ats: ashby
+  token: replimune
+  website: https://www.replimune.com
+  category_hint: biotech-ai
+- name: Hansa Biopharma
+  ats: teamtailor
+  token: hansabiopharma
+  country: United Kingdom
+  website: https://www.hansabiopharma.com
+  category_hint: pharma
+- name: Oxford Biodynamics
+  ats: bamboohr
+  token: obdynamics
+  country: United Kingdom
+  website: https://www.oxfordbiodynamics.com
+  category_hint: biotech-ai
+- name: Oxford Biotherapeutics
+  ats: bamboohr
+  token: oxfordbiotherapeutics
+  country: United Kingdom
+  website: https://www.oxfordbiotherapeutics.com
+  category_hint: biotech-ai
+- name: Tropic Biosciences
+  ats: bamboohr
+  token: tropicbioscience
+  country: United Kingdom
+  website: https://tropic.bio
+  category_hint: biotech-ai
+- name: Organox
+  ats: workable
+  token: organox
+  website: https://www.organox.com
+  category_hint: biotech-ai
+- name: Phagenesis
+  ats: greenhouse
+  token: phagenesisltd
+  website: https://www.phagenesis.com
+  category_hint: biotech-ai
+- name: Colorifix
+  ats: teamtailor
+  token: colorifixlimited
+  country: United Kingdom
+  website: https://www.colorifix.com
+  category_hint: biotech-ai
+- name: NatureMetrics
+  ats: personio
+  token: naturemetrics
+  website: https://naturemetrics.com
+  category_hint: biotech-ai
+- name: SPT Labtech
+  ats: workable
+  token: spt-labtech
+  website: https://www.sptlabtech.com
+  category_hint: life-sciences-tools
+- name: Synthace
+  ats: teamtailor
+  token: synthace-1710333607
+  country: United Kingdom
+  website: https://www.synthace.com
+  category_hint: biotech-ai
+- name: Vitrolife
+  ats: teamtailor
+  token: vitrolife
+  country: United Kingdom
+  website: https://www.vitrolife.com
+  category_hint: life-sciences-tools
+- name: Ares Management
+  ats: workday
+  token: aresmgmt
+  wd: wd1
+  site: External
+  search: London
+  website: https://www.ares.com
+  category_hint: finance
+- name: Cambridge Associates
+  ats: workday
+  token: cambridgeassociates
+  wd: wd5
+  site: Cambridge_Associates
+  search: London
+  website: https://www.cambridgeassociates.com
+  category_hint: finance
+- name: Pimco
+  ats: workday
+  token: pimco
+  wd: wd1
+  site: pimco-careers
+  search: London
+  website: https://www.pimco.com
+  category_hint: finance
+- name: Quilter Cheviot
+  ats: workday
+  token: quilter
+  wd: wd3
+  site: External-Career-Site
+  search: London
+  website: https://www.quiltercheviot.com
+  category_hint: finance
+- name: Quadrature Capital
+  ats: greenhouse
+  token: quadraturecapital
+  website: https://www.quadrature.ai
+  category_hint: finance
+- name: Flyttr
+  ats: bamboohr
+  token: flyttr
+  country: United Kingdom
+  website: https://flyttr.com
+  category_hint: biotech-ai
