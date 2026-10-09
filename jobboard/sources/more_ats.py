@@ -218,8 +218,9 @@ def _with_country(company: dict, location: str) -> str:
     """
     Append the company's configured `country` (e.g. "United Kingdom") to a
     location. Small boards often list just "Abingdon, Oxfordshire" or nothing
-    at all, which the England filter can't recognise on its own; the country
-    is a verified fact we set per company in companies.yaml.
+    at all, which the England filter can't recognise on its own. Callers must
+    only use this when the feed supplies no country of its own; it is a
+    guess about the company's home country, so it is wrong for multinationals.
     """
     country = company.get("country")
     if country and country.lower() not in location.lower():
@@ -244,12 +245,18 @@ class BambooHRSource(_CompanyATSSource):
             opening = detail_resp.json().get("result", {}).get("jobOpening", {})
             loc = opening.get("location") or item.get("location") or {}
             ats_loc = opening.get("atsLocation") or {}
-            location = _join_location(loc.get("city"), loc.get("state"), ats_loc.get("country"))
+            feed_country = loc.get("addressCountry") or ats_loc.get("country")
+            location = _join_location(loc.get("city"), loc.get("state"), feed_country)
+            if not feed_country:
+                # Only guess the company's home country when the feed gives none.
+                # Never override a real one: Flyttr's Campinas (Brazil) jobs must
+                # stay Brazilian, not get relabelled "United Kingdom".
+                location = _with_country(company, location)
             description_html = opening.get("description", "") or ""
             out.append(self._job(
                 company,
                 title=opening.get("jobOpeningName") or item.get("jobOpeningName", ""),
-                location=_with_country(company, location),
+                location=location,
                 employment_type=opening.get("employmentStatusLabel"),
                 posted_at=_date_prefix(opening.get("datePosted")),
                 description_html=description_html,

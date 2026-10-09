@@ -93,6 +93,14 @@ class RefreshSummary:
         }
 
 
+# Sources that read an employer's own careers board (as opposed to Reed,
+# Adzuna and LinkedIn, which are third-party aggregators).
+EMPLOYER_BOARD_SOURCES = {
+    "greenhouse", "lever", "ashby", "workable", "recruitee", "smartrecruiters",
+    "personio", "workday", "bamboohr", "teamtailor",
+}
+
+
 def _fetch_free_source(name: str, source) -> tuple[str, list[Job], Optional[str]]:
     """Run one free source's safe_fetch() and report back (name, jobs, error-or-None)."""
     try:
@@ -250,7 +258,18 @@ def run_refresh(
             db.cache_company(conn, job.company_normalised, job.company_website, job.company_logo)
     conn.commit()
 
-    summary.deactivated = db.mark_missing_inactive(
+    # Employer boards are authoritative: retire single-source jobs that have
+    # disappeared from a board we fetched successfully (see db.retire_missing_from_boards).
+    boards: dict[str, set[str]] = {}
+    for job in all_jobs:
+        for source_name in job.sources:
+            if source_name in EMPLOYER_BOARD_SOURCES:
+                boards.setdefault(source_name, set()).add(job.company_normalised)
+    retired = db.retire_missing_from_boards(
+        conn, boards, seen_ids=[job.id for job in deduped],
+        inactive_after_missed=settings["inactive_after_missed_refreshes"],
+    )
+    summary.deactivated = retired + db.mark_missing_inactive(
         conn, seen_ids=[job.id for job in deduped], inactive_after_missed=settings["inactive_after_missed_refreshes"]
     )
     summary.final_job_count = len(deduped)

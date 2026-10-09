@@ -294,6 +294,39 @@ def mark_missing_inactive(
     return deactivated
 
 
+def retire_missing_from_boards(
+    conn: sqlite3.Connection, boards: dict[str, set[str]], seen_ids: Iterable[str], inactive_after_missed: int
+) -> int:
+    """
+    Employer careers boards (Greenhouse, Workday, ...) are authoritative: if a
+    company's board loaded fine this refresh and a job that came ONLY from that
+    board isn't on it any more, the job is gone, so retire it now instead of
+    waiting for `inactive_after_missed` refreshes.
+
+    `boards` maps source name -> normalised company names whose board returned
+    at least one job this run. That "at least one" guard is the safety net: a
+    failed fetch returns nothing, so the company isn't listed and its jobs
+    fall back to the normal slow miss-counting rule. Rows seen on several
+    sources (e.g. also on Reed) are left to the normal rule too.
+
+    Returns how many jobs were retired.
+    """
+    seen_ids = set(seen_ids)
+    retired = 0
+    rows = conn.execute("SELECT id, company_normalised, sources FROM jobs WHERE is_active = 1").fetchall()
+    for row in rows:
+        if row["id"] in seen_ids:
+            continue
+        sources = json.loads(row["sources"] or "[]")
+        if len(sources) == 1 and row["company_normalised"] in boards.get(sources[0], set()):
+            conn.execute(
+                "UPDATE jobs SET is_active = 0, missed_refreshes = ? WHERE id = ?",
+                (inactive_after_missed, row["id"]),
+            )
+            retired += 1
+    return retired
+
+
 def get_active_jobs(conn: sqlite3.Connection, max_age_days: Optional[int] = None) -> list[Job]:
     """
     All jobs currently shown on the board (used by GET /api/jobs).

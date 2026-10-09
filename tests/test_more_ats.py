@@ -135,3 +135,25 @@ def test_teamtailor_rss(monkeypatch):
     assert job.location == "United Kingdom"        # feed had no location, so the configured country is used
     assert job.posted_at == "2026-10-01" and job.work_mode == "hybrid"
     assert "Immunotherapy" in job.description_text and "<" not in job.description_text
+
+
+def test_bamboohr_keeps_the_feeds_real_country(monkeypatch):
+    """A Brazilian office must stay Brazilian even if the company has a configured home country."""
+    detail = lambda city, state, country: {"result": {"jobOpening": {
+        "jobOpeningName": "Production Technician", "location": {"city": city, "state": state, "addressCountry": country},
+        "atsLocation": {}, "description": "<p>x</p>", "jobOpeningShareUrl": "https://acme.bamboohr.com/careers/1"}}}
+    _fake_requests(monkeypatch, {"careers/1/detail": detail("Campinas - SP", "São Paulo", "Brazil"),
+                                 "careers/list": {"result": [{"id": "1", "jobOpeningName": "x"}]}})
+    source = more_ats.BambooHRSource(); source.companies = [{**COMPANY, "country": "United Kingdom"}]
+    [job] = source.fetch()
+    assert "Brazil" in job.location and "United Kingdom" not in job.location
+
+
+def test_bamboohr_falls_back_to_configured_country_only_when_feed_has_none(monkeypatch):
+    _fake_requests(monkeypatch, {"careers/1/detail": {"result": {"jobOpening": {
+        "jobOpeningName": "Scientist", "location": {"city": "Abingdon", "state": "Oxfordshire"}, "atsLocation": {},
+        "description": "<p>x</p>", "jobOpeningShareUrl": "https://acme.bamboohr.com/careers/1"}}},
+        "careers/list": {"result": [{"id": "1", "jobOpeningName": "x"}]}})
+    source = more_ats.BambooHRSource(); source.companies = [{**COMPANY, "country": "United Kingdom"}]
+    [job] = source.fetch()
+    assert job.location == "Abingdon, Oxfordshire, United Kingdom"

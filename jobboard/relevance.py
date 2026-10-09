@@ -47,7 +47,9 @@ _ENGINEERING_ROLE_RE = re.compile(
     r"\bai engineer\b|\bresearch engineer\b|\bnlp engineer\b|"
     r"\bcomputer vision engineer\b|\bsoftware engineering\b|\bnetwork engineer\b|"
     r"\bcloud engineer\b|\bsystems analyst\b|\bit business systems\b|\bit support\b|"
-    r"\bsecurity engineer\b|\bapplication security\b|\bproduct engineer\b|\bcyber",
+    r"\bsecurity engineer\b|\bapplication security\b|\bproduct engineer\b|\bcyber|"
+    r"\bit engineer\b|\bdesign engineer\b|\bmechanical (?:design )?engineer\b|\belectrical engineer\b|"
+    r"\belectronics? engineer\b|\bfirmware\b|\bautomation engineer\b",
     re.IGNORECASE,
 )
 

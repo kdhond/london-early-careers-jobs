@@ -1632,7 +1632,6 @@
 - name: Flyttr
   ats: bamboohr
   token: flyttr
-  country: United Kingdom
   website: https://flyttr.com
   category_hint: biotech-ai
 - name: Basecamp Research
