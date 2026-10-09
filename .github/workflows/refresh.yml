@@ -19,8 +19,12 @@ name: Daily job refresh
 # `workflow_dispatch` lets you trigger a run manually from the Actions tab,
 # for testing without waiting for the schedule.
 on:
-  schedule:
-    - cron: "0 6 * * *"  # 06:00 UTC daily
+  # AUTOMATIC DAILY RUNS ARE PAUSED (2026-10-09, at the owner's request): the
+  # job board now only updates when someone presses "Run workflow" on the
+  # Actions tab (or runs `gh workflow run refresh.yml`). To turn the daily
+  # run back on, uncomment the two lines below and push.
+  # schedule:
+  #   - cron: "0 6 * * *"  # 06:00 UTC daily
   workflow_dispatch: {}
 
 # Needed to let this workflow push its own commit back to the repo.
