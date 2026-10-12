@@ -1778,3 +1778,51 @@
   token: vitabiotics
   website: https://www.vitabiotics.com
   category_hint: biotech-ai
+- name: Alliance Pharma
+  ats: careers
+  careers_url: https://www.alliancepharmaceuticals.com/join-us/working-together-to-achieve-more/
+  country: United Kingdom
+  website: https://www.alliancepharmaceuticals.com
+  category_hint: pharma
+- name: cellcentric
+  ats: careers
+  careers_url: https://www.cellcentric.com/careers/
+  country: United Kingdom
+  website: https://www.cellcentric.com
+  category_hint: biotech-ai
+- name: Congenica Ltd
+  ats: careers
+  careers_url: https://www.congenica.com/careers
+  country: United Kingdom
+  website: https://www.congenica.com
+  category_hint: biotech-ai
+- name: Fusion Antibodies
+  ats: careers
+  careers_url: https://fusionantibodies.com/news-and-insights/careers/rd-team-leader/
+  country: United Kingdom
+  website: https://fusionantibodies.com
+  category_hint: biotech-ai
+- name: Sanaclis
+  ats: careers
+  careers_url: https://sanaclis.com/careers
+  country: United Kingdom
+  website: https://sanaclis.com
+  category_hint: biotech-ai
+- name: Sygnature Discovery
+  ats: careers
+  careers_url: https://careers.sygnaturediscovery.com/
+  country: United Kingdom
+  website: https://www.sygnaturediscovery.com
+  category_hint: biotech-ai
+- name: Diomed Developments
+  ats: careers
+  careers_url: https://www.diomedgroup.co.uk/vacancies/
+  country: United Kingdom
+  website: https://www.diomedgroup.co.uk
+  category_hint: pharma
+- name: NovumGen
+  ats: careers
+  careers_url: https://novumgen.com/careers.html
+  country: United Kingdom
+  website: https://novumgen.com
+  category_hint: pharma

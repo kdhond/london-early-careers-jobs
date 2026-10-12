@@ -46,6 +46,7 @@ _SOURCE_PRIORITY = {
     "workday": 0,
     "bamboohr": 0,
     "teamtailor": 0,
+    "careers": 0,
     "linkedin": 1,
     "reed": 2,
     "adzuna": 3,

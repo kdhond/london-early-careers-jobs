@@ -55,6 +55,7 @@ from jobboard.sources.more_ats import (
     TeamtailorSource,
     WorkableSource,
 )
+from jobboard.sources.careers_page import CareersPageSource
 from jobboard.sources.linkedin_apify import LinkedInApifySource
 from jobboard.sources.reed import ReedSource
 
@@ -97,7 +98,7 @@ class RefreshSummary:
 # Adzuna and LinkedIn, which are third-party aggregators).
 EMPLOYER_BOARD_SOURCES = {
     "greenhouse", "lever", "ashby", "workable", "recruitee", "smartrecruiters",
-    "personio", "workday", "bamboohr", "teamtailor",
+    "personio", "workday", "bamboohr", "teamtailor", "careers",
 }
 
 
@@ -144,6 +145,7 @@ def run_refresh(
         "workday": WorkdaySource(),
         "bamboohr": BambooHRSource(),
         "teamtailor": TeamtailorSource(),
+        "careers": CareersPageSource(),
         "reed": ReedSource(conn=conn),
         "adzuna": AdzunaSource(),
     }
