@@ -1691,3 +1691,8 @@
   token: tandem-health
   website: https://www.tandemhealth.ai
   category_hint: biotech-ai
+- name: Veramed
+  ats: greenhouse
+  token: veramed
+  website: https://www.veramed.co.uk
+  category_hint: cro
