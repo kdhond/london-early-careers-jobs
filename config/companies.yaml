@@ -1671,3 +1671,23 @@
   token: phasebiolabs
   website: https://phasebiolabs.com
   category_hint: biotech-ai
+- name: Orchard Therapeutics
+  ats: workable
+  token: orchard-therapeutics
+  website: https://www.orchard-tx.com
+  category_hint: biotech-ai
+- name: Our Future Health
+  ats: workable
+  token: our-future-health
+  website: https://ourfuturehealth.org.uk
+  category_hint: health-equity
+- name: Lindus Health
+  ats: ashby
+  token: lindus
+  website: https://www.lindushealth.com
+  category_hint: biotech-ai
+- name: Tandem Health
+  ats: ashby
+  token: tandem-health
+  website: https://www.tandemhealth.ai
+  category_hint: biotech-ai
