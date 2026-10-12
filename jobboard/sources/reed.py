@@ -51,6 +51,8 @@ class ReedSource(Source):
         settings = load_yaml("settings.yaml")
         self.results_per_query: int = settings["reed"]["results_per_query"]
         self.detail_concurrency: int = settings["reed"]["detail_concurrency"]
+        self.results_per_keyword: int = settings["reed"].get("results_per_keyword", 100)
+        self.keywords: list[str] = settings.get("bio_search_keywords", [])
 
     def is_configured(self) -> bool:
         return bool(self.api_key)
@@ -79,16 +81,32 @@ class ReedSource(Source):
                 for raw in self._search(client, location_name):
                     raw_jobs_by_id[str(raw["jobId"])] = raw
 
+            # Targeted pass: each biology/health/finance-in-biotech keyword,
+            # London then nationwide. The location-only sweeps above only
+            # reach the newest ~2,000 of ~27,000 London jobs, so niche
+            # roles rarely make it in without this.
+            for keyword in self.keywords:
+                for location_name in ("London", None):
+                    for raw in self._search(client, location_name, keyword, self.results_per_keyword):
+                        raw_jobs_by_id.setdefault(str(raw["jobId"]), raw)
+
             self._fill_full_descriptions(client, raw_jobs_by_id)
 
         return [self._to_job(raw) for raw in raw_jobs_by_id.values()]
 
-    def _search(self, client: httpx.Client, location_name: Optional[str]) -> list[dict]:
-        """Page through Reed's search results for one location (no keyword filter)."""
+    def _search(
+        self,
+        client: httpx.Client,
+        location_name: Optional[str],
+        keyword: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> list[dict]:
+        """Page through Reed's search results for one location (and optional keyword)."""
+        limit = limit or self.results_per_query
         results: list[dict] = []
         skip = 0
         page_size = 100  # Reed's max page size
-        while len(results) < self.results_per_query:
+        while len(results) < limit:
             params = {
                 "distanceFromLocation": 25,
                 "resultsToTake": page_size,
@@ -96,6 +114,8 @@ class ReedSource(Source):
             }
             if location_name:
                 params["locationName"] = location_name
+            if keyword:
+                params["keywords"] = keyword
             resp = request_with_retry(client, "GET", SEARCH_URL, params=params)
             if resp.status_code != 200:
                 break
@@ -107,7 +127,7 @@ class ReedSource(Source):
             skip += page_size
             if len(page) < page_size:
                 break  # reached the last page
-        return results[: self.results_per_query]
+        return results[:limit]
 
     def _fill_full_descriptions(
         self, client: httpx.Client, raw_jobs_by_id: dict[str, dict]

@@ -44,6 +44,8 @@ class AdzunaSource(Source):
         settings = load_yaml("settings.yaml")
         self.max_pages_per_query: int = settings["adzuna"]["max_pages_per_query"]
         self.max_days_old: int = settings["adzuna"]["max_days_old"]
+        self.pages_per_keyword: int = settings["adzuna"].get("pages_per_keyword", 2)
+        self.keywords: list[str] = settings.get("bio_search_keywords", [])
 
     def is_configured(self) -> bool:
         return bool(self.app_id and self.app_key)
@@ -71,9 +73,23 @@ class AdzunaSource(Source):
                     for raw in raws:
                         job = self._to_job(raw)
                         jobs_by_id[job.id] = job  # dedupe across location/page overlap
+            # Targeted pass: the bio/health keywords, so niche roles aren't
+            # crowded out by the ~110,000 generic London results (see
+            # bio_search_keywords in settings.yaml).
+            for keyword in self.keywords:
+                for where in ("London", None):
+                    for page in range(1, self.pages_per_keyword + 1):
+                        raws = self._search(client, where, page, keyword)
+                        if not raws:
+                            break
+                        for raw in raws:
+                            job = self._to_job(raw)
+                            jobs_by_id.setdefault(job.id, job)
         return list(jobs_by_id.values())
 
-    def _search(self, client: httpx.Client, where: Optional[str], page: int) -> list[dict]:
+    def _search(
+        self, client: httpx.Client, where: Optional[str], page: int, keyword: Optional[str] = None
+    ) -> list[dict]:
         url = SEARCH_URL.format(page=page)
         params = {
             "app_id": self.app_id,
@@ -84,6 +100,8 @@ class AdzunaSource(Source):
         }
         if where:
             params["where"] = where
+        if keyword:
+            params["what"] = keyword
         resp = request_with_retry(client, "GET", url, params=params)
         if resp.status_code != 200:
             return []

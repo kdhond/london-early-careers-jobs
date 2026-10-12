@@ -55,6 +55,7 @@ from jobboard.sources.more_ats import (
     TeamtailorSource,
     WorkableSource,
 )
+from jobboard.sources.boards import CharityJobSource, JobsAcUkSource
 from jobboard.sources.careers_page import CareersPageSource
 from jobboard.sources.linkedin_apify import LinkedInApifySource
 from jobboard.sources.reed import ReedSource
@@ -146,6 +147,8 @@ def run_refresh(
         "bamboohr": BambooHRSource(),
         "teamtailor": TeamtailorSource(),
         "careers": CareersPageSource(),
+        "jobsacuk": JobsAcUkSource(),
+        "charityjob": CharityJobSource(),
         "reed": ReedSource(conn=conn),
         "adzuna": AdzunaSource(),
     }

@@ -49,6 +49,8 @@ _SOURCE_PRIORITY = {
     "careers": 0,
     "linkedin": 1,
     "reed": 2,
+    "jobsacuk": 2,
+    "charityjob": 2,
     "adzuna": 3,
 }
 _DEFAULT_SOURCE_PRIORITY = 99  # unknown source names sort last
