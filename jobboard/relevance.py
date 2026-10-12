@@ -90,7 +90,13 @@ _LOW_FIT_SUPPORT_ROLE_RE = re.compile(
 _NOT_RELEVANT_ROLE_RE = re.compile(
     r"\bnurse\b|\bnurses\b|\bnursing\b|\bpharmacist\b|\bpharmacy\b|"
     r"\bhealthcare assistant\b|\bcare assistant\b|\bsupport worker\b|\bcarer\b|"
-    r"\bdentist\b|\bdental\b|\bphysiotherapist\b|\bsales\b",
+    r"\bdentist\b|\bdental\b|\bphysiotherapist\b|\bsales\b|"
+    # 2026-10-12: widened science keywords ("scientist", "research ...")
+    # also match these unrelated roles, so rule them out explicitly.
+    r"\bteacher\b|\bteaching\b|\bchef\b|\bschool\b|"
+    r"\bpsycholog|\bsolicitor\b|\blawyer\b|\bnegligence\b|\bsupport worker\b|\bquant\b|"
+    r"\bquantitative\b|\bmarket researcher|\bux research|\bclinical (?:supervisor|assessor|advisor)\b|"
+    r"\bhealth (?:&|and|&amp;) safety\b|\bservice manager\b|\bdoctor\b|\blocum\b",
     re.IGNORECASE,
 )
 
@@ -140,7 +146,12 @@ class RelevanceChecker:
             if _GENERALIST_STARTUP_ROLE_RE.search(job.title or ""):
                 return True
 
-        if self._pattern.search(job.title or ""):
+        # "Data Scientist" must not match via the bare "scientist" keyword
+        # (generic AI/analytics role) — strip it first so only a genuine
+        # bio keyword elsewhere in the title ("Drug Discovery Data
+        # Scientist") can make it relevant.
+        title_for_keywords = re.sub(r"\bdata scientists?\b", "", job.title or "", flags=re.IGNORECASE)
+        if self._pattern.search(title_for_keywords):
             return True
 
         # No keyword matched, but we still know — as verified fact, not

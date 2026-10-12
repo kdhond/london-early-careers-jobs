@@ -170,6 +170,62 @@
     - bioprocess
     - process development
     - protein engineering
+    # 2026-10-12 widening: user reported too few good-fit jobs. Titles like
+    # "Scientist", "Research Associate", "Clinical Bioinformatician" and
+    # "Scientist - ML and Antibody Engineering" were being missed because
+    # none contained a bio keyword above. "data scientist" is excluded
+    # separately in relevance.py (_NOT_RELEVANT_ROLE_RE).
+    - scientist
+    - research associate
+    - research assistant
+    - research officer
+    - research fellow
+    - postdoctoral
+    - bioinformatician
+    - antibody
+    - assay
+    - cell therapy
+    - gene therapy
+    - gene editing
+    - crispr
+    - genetics
+    - genetic
+    - proteomics
+    - mass spectrometry
+    - chemist
+    - medicinal chemistry
+    - drug development
+    - drug safety
+    - clinical scientist
+    - clinical data
+    - clinical project
+    - clinical programme
+    - clinical program
+    - clinical study
+    - clinical trials
+    - clinical affairs
+    - scientific communication
+    - scientific affairs
+    - scientific writer
+    - medical communications
+    - medical information
+    - medical device
+    - pharmacology
+    - pathology
+    - diagnostics
+    - r&d
+    - research and development
+    - healthtech
+    - nhs data
+    - health data
+    - health economics
+    - market access
+    - hta
+    - evidence generation
+    - real world evidence
+    - quality assurance officer
+    - gxp
+    - gmp
     # Consulting & strategy — deliberately NOT the bare words "consultant" /
     # "consulting": recruitment agencies use "Consultant" as a generic sales
     # job title ("Recruitment Consultant", "Luxury Sales Consultant",
