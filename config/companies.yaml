@@ -1696,3 +1696,85 @@
   token: veramed
   website: https://www.veramed.co.uk
   category_hint: cro
+- name: Accord Healthcare
+  ats: workable
+  token: myaccord
+  website: https://accord.org
+  category_hint: biotech-ai
+- name: Akoya Biosciences
+  ats: greenhouse
+  token: akoya
+  website: https://akoya.com
+  category_hint: biotech-ai
+- name: Synexa Life Sciences
+  ats: bamboohr
+  token: synexalifesciences
+  country: United Kingdom
+  website: https://alderleyanalytical.com
+  category_hint: biotech-ai
+- name: Centessa Pharmaceuticals
+  ats: greenhouse
+  token: centessapharmaceuticalsinc
+  website: https://centessa.com
+  category_hint: biotech-ai
+- name: Kiniksa Pharmaceuticals
+  ats: greenhouse
+  token: kiniksapharmaceuticals
+  website: https://www.kiniksa.com
+  category_hint: biotech-ai
+- name: LGC
+  ats: smartrecruiters
+  token: LGCGroup
+  website: https://www.biosearchtech.com
+  category_hint: biotech-ai
+- name: Mestag Therapeutics
+  ats: bamboohr
+  token: mestagtx
+  country: United Kingdom
+  website: https://www.mestagtherapeutics.com
+  category_hint: biotech-ai
+- name: Onyx Scientific
+  ats: ashby
+  token: onyx-bio
+  website: https://onyx.bio
+  category_hint: biotech-ai
+- name: Plasmidsaurus
+  ats: ashby
+  token: plasmidsaurus
+  website: https://plasmidsaurus.com
+  category_hint: biotech-ai
+- name: Proteros Biostructures
+  ats: personio
+  token: proteros-biostructures-gmbh
+  country: United Kingdom
+  website: https://www.proteros.com
+  category_hint: biotech-ai
+- name: PTC Therapeutics
+  ats: workday
+  token: ptc
+  wd: wd1
+  site: PTC
+  search: London
+  website: https://www.ptc.com/en
+  category_hint: biotech-ai
+- name: Sense Biodetection
+  ats: workable
+  token: sense
+  website: https://sense.com
+  category_hint: biotech-ai
+- name: Tagomics
+  ats: bamboohr
+  token: tagomics
+  country: United Kingdom
+  website: https://tagomics.com
+  category_hint: biotech-ai
+- name: Transnetyx
+  ats: greenhouse
+  token: transnetyxcareers
+  website: https://www.transnetyx.com
+  category_hint: biotech-ai
+- name: Vitabiotics
+  ats: workable
+  token: vitabiotics
+  website: https://www.vitabiotics.com
+  category_hint: biotech-ai
